@@ -35,8 +35,15 @@ secrets/
 # Build artifacts
 node_modules/
 static/
-staticfiles/
 .qodo/
+
+# Runtime directories — track folder structure only, not contents
+staticfiles/*
+!staticfiles/.gitkeep
+experiments/*
+!experiments/.gitkeep
+NAS_Database/*
+!NAS_Database/.gitkeep
 
 # Environment variables
 .env
