@@ -1,0 +1,393 @@
+/* ── ManageJobs ── */
+.mj-container {
+    min-height: 100vh;
+    background: #f0efe8;
+    padding: 48px 56px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+}
+
+/* Header */
+.mj-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 36px;
+}
+
+.mj-title {
+    margin: 0;
+    font-size: 1.9em;
+    font-weight: 400;
+    color: #1e1e1e;
+    letter-spacing: -0.4px;
+    flex-grow: 1;
+}
+
+.mj-btn-ghost {
+    background: transparent;
+    border: 1px solid #d4d3cc;
+    color: #666;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+.mj-btn-ghost:hover { border-color: #999; color: #333; }
+
+/* Stats bar */
+.mj-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.mj-stat {
+    background: #fff;
+    border: 1px solid #e8e7e0;
+    border-radius: 10px;
+    padding: 14px 22px;
+    text-align: center;
+    min-width: 80px;
+}
+
+.mj-stat-value {
+    font-size: 1.6em;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.mj-stat-label {
+    font-size: 0.72em;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+/* Filter tabs */
+.mj-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.mj-filter {
+    padding: 6px 16px;
+    border: 1px solid #d4d3cc;
+    background: transparent;
+    color: #666;
+    border-radius: 20px;
+    font-size: 0.83em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.mj-filter:hover { border-color: #999; color: #333; }
+.mj-filter.active { background: #1e1e1e; border-color: #1e1e1e; color: #fff; }
+
+/* Table */
+.mj-table {
+    background: #fff;
+    border: 1px solid #e8e7e0;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 1100px;
+}
+
+.mj-table-head {
+    display: grid;
+    grid-template-columns: 140px 110px 1fr 160px 180px;
+    gap: 16px;
+    padding: 11px 20px;
+    background: #fafaf8;
+    border-bottom: 1px solid #e8e7e0;
+    font-size: 0.74em;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.mj-table-row {
+    display: grid;
+    grid-template-columns: 140px 110px 1fr 160px 180px;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0efe8;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-size: 0.88em;
+}
+.mj-table-row:last-child { border-bottom: none; }
+.mj-table-row:hover { background: #fafaf8; }
+
+.mj-job-id {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.92em;
+    color: #333;
+    font-weight: 500;
+}
+
+.mj-date { color: #777; font-size: 0.88em; }
+
+.mj-status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+/* Progress cell */
+.mj-progress-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mj-progress-track {
+    flex: 1;
+    height: 5px;
+    background: #f0efe8;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.mj-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.mj-progress-pct {
+    font-size: 0.8em;
+    color: #aaa;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Row action buttons */
+.mj-row-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.mj-row-btn {
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-size: 0.8em;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.mj-row-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.mj-row-btn.cancel  { background: #fff0f0; color: #c0392b; border-color: #f5c6c6; }
+.mj-row-btn.cancel:hover:not(:disabled)  { background: #dc3545; border-color: #dc3545; color: #fff; }
+
+.mj-row-btn.resume  { background: #f0faf3; color: #1a7a3a; border-color: #b8dfc5; }
+.mj-row-btn.resume:hover:not(:disabled)  { background: #28a745; border-color: #28a745; color: #fff; }
+
+.mj-row-btn.details { background: transparent; color: #555; border-color: #d4d3cc; }
+.mj-row-btn.details:hover { background: #1e1e1e; border-color: #1e1e1e; color: #fff; }
+
+/* ── Detail view ─────────────────────────────────────────────────────────── */
+.mj-detail-card {
+    background: #fff;
+    border: 1px solid #e8e7e0;
+    border-radius: 14px;
+    padding: 36px;
+    max-width: 700px;
+}
+
+/* Top row: ID + status */
+.mj-detail-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f0efe8;
+}
+
+.mj-detail-id {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.9em;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 6px;
+    word-break: break-all;
+}
+
+.mj-detail-date {
+    font-size: 0.83em;
+    color: #aaa;
+}
+
+/* Progress in detail */
+.mj-detail-progress {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f0efe8;
+}
+
+.mj-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.83em;
+    color: #aaa;
+    margin-bottom: 8px;
+}
+
+/* Actions */
+.mj-detail-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #f0efe8;
+}
+
+.mj-action-cancel,
+.mj-action-resume {
+    padding: 9px 20px;
+    border-radius: 9px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+}
+.mj-action-cancel:disabled,
+.mj-action-resume:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.mj-action-cancel { background: #fff0f0; color: #c0392b; border-color: #f5c6c6; }
+.mj-action-cancel:hover:not(:disabled) { background: #dc3545; border-color: #dc3545; color: #fff; }
+
+.mj-action-resume { background: #f0faf3; color: #1a7a3a; border-color: #b8dfc5; }
+.mj-action-resume:hover:not(:disabled) { background: #28a745; border-color: #28a745; color: #fff; }
+
+/* Pipeline step tracker */
+.mj-steps-section {}
+
+.mj-steps-label {
+    font-size: 0.72em;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+}
+
+.mj-steps-track { display: flex; flex-direction: column; }
+
+.mj-step-row {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.mj-step-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.mj-step-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    margin-top: 3px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.mj-step-line {
+    width: 2px;
+    flex: 1;
+    background: #e8e7e0;
+    margin: 4px 0;
+    min-height: 20px;
+}
+
+.mj-step-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0 20px 0;
+    flex: 1;
+    border-bottom: 1px solid #f5f4ef;
+}
+
+.mj-step-row:last-child .mj-step-body {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.mj-step-name {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #1e1e1e;
+    text-transform: capitalize;
+}
+
+.mj-step-status {
+    font-size: 0.8em;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* States */
+.mj-empty {
+    text-align: center;
+    padding: 64px 20px;
+    background: #fff;
+    border-radius: 12px;
+    color: #aaa;
+    font-size: 0.95em;
+    border: 1px solid #e8e7e0;
+    max-width: 1100px;
+}
+
+.mj-error {
+    background: #fef2f0;
+    border-left: 3px solid #e87060;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #c0392b;
+    margin-bottom: 16px;
+    max-width: 1100px;
+    font-size: 0.88em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mj-container { padding: 24px 16px; }
+
+    .mj-table-head,
+    .mj-table-row { grid-template-columns: 1fr 90px; }
+
+    .mj-table-head span:nth-child(3),
+    .mj-table-head span:nth-child(4),
+    .mj-table-row span:nth-child(3),
+    .mj-table-row span:nth-child(4) { display: none; }
+
+    .mj-detail-card { padding: 20px; }
+    .mj-detail-top { flex-direction: column; gap: 12px; }
+}
