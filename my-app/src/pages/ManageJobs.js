@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/ManageJobs.css';
+
+const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
 
 export default function ManageJobs({ onBack }) {
     const [jobs, setJobs] = useState([]);
@@ -8,6 +10,8 @@ export default function ManageJobs({ onBack }) {
     const [error, setError] = useState('');
     const [selectedJob, setSelectedJob] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
+    const [lastRefreshed, setLastRefreshed] = useState(null);
+    const isFetchingRef = useRef(false);
 
     const openJobDetail = (job) => {
         window.history.pushState({ jobDetail: true }, '');
@@ -22,10 +26,33 @@ export default function ManageJobs({ onBack }) {
         return () => window.removeEventListener('popstate', handlePopState);
     }, [selectedJob]);
 
-    useEffect(() => { fetchJobs(); fetchStatistics(); }, [statusFilter]);
+    // Keep selectedJob in sync when the jobs list refreshes
+    useEffect(() => {
+        if (selectedJob) {
+            const updated = jobs.find(j => j.job_id === selectedJob.job_id);
+            if (updated) setSelectedJob(updated);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [jobs]);
+
+    useEffect(() => {
+        fetchJobs();
+        fetchStatistics();
+
+        const interval = setInterval(() => {
+            if (!isFetchingRef.current) {
+                fetchJobs();
+                fetchStatistics();
+            }
+        }, AUTO_REFRESH_INTERVAL);
+
+        return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [statusFilter]);
 
     const fetchJobs = async () => {
-        setIsLoading(true);
+        isFetchingRef.current = true;
+        setIsLoading(prev => jobs.length === 0 ? true : prev);
         setError('');
         try {
             const url = statusFilter
@@ -37,10 +64,12 @@ export default function ManageJobs({ onBack }) {
             if (!response.ok) throw new Error('Failed to fetch jobs');
             const data = await response.json();
             setJobs(data.jobs || []);
+            setLastRefreshed(new Date());
         } catch (err) {
             setError(err.message || 'Failed to load jobs');
         } finally {
             setIsLoading(false);
+            isFetchingRef.current = false;
         }
     };
 
@@ -139,6 +168,7 @@ export default function ManageJobs({ onBack }) {
                 <div className="mj-header">
                     <button className="mj-btn-ghost" onClick={closeJobDetail}>← Back</button>
                     <h1 className="mj-title">Job Details</h1>
+                    <button className="mj-btn-ghost" onClick={() => { fetchJobs(); fetchStatistics(); }}>Refresh</button>
                 </div>
 
                 <div className="mj-detail-card">
@@ -210,12 +240,23 @@ export default function ManageJobs({ onBack }) {
         );
     }
 
+    const formatRefreshed = (d) => d
+        ? `Updated ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+        : '';
+
     // ── List view ──────────────────────────────────────────────────────────────
     return (
         <div className="mj-container">
             <div className="mj-header">
                 <button className="mj-btn-ghost" onClick={onBack}>← Back</button>
                 <h1 className="mj-title">Jobs</h1>
+                <span className="mj-live-badge">
+                    <span className="mj-live-dot" />
+                    Live
+                </span>
+                {lastRefreshed && (
+                    <span className="mj-last-refreshed">{formatRefreshed(lastRefreshed)}</span>
+                )}
                 <button className="mj-btn-ghost" onClick={() => { fetchJobs(); fetchStatistics(); }}>Refresh</button>
             </div>
 

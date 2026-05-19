@@ -11,10 +11,10 @@ function DashboardLayout() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f0efe8' }}>
-      {/* Minimal top bar */}
+      {/* App nav bar */}
       <div style={{
         position: 'fixed',
-        top: 0,
+        top: '32px',
         left: 0,
         right: 0,
         height: '52px',
@@ -52,8 +52,8 @@ function DashboardLayout() {
           </button>
         </div>
       </div>
-      {/* Push content below fixed bar */}
-      <div style={{ paddingTop: '52px' }}>
+      {/* Push content below both bars */}
+      <div style={{ paddingTop: '84px' }}>
         <Dashboard />
       </div>
     </div>
@@ -109,8 +109,9 @@ function NewPipeline() {
 
       const token = window.localStorage.getItem('token');
 
-      // Use absolute API base since we're no longer using npm proxy
-      const API_BASE = 'http://localhost:8000/pipeline-factory';
+      // TODO: /pipeline-factory/recordings/ backend endpoint is not yet implemented.
+      // Replace this URL once the recording registration endpoint exists.
+      const API_BASE = `${window.location.origin}/pipeline-factory`;
       const resp = await fetch(`${API_BASE}/recordings/`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Token ${token}` } : {},

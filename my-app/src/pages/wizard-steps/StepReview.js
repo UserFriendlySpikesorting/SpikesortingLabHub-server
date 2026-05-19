@@ -6,7 +6,13 @@ export default function StepReview({ onComplete }) {
     const { wizardState, resetWizard } = useWizard();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [successData, setSuccessData] = useState(null); // { jobId, username }
     const { recording, selectedPipeline, jobEnvironment, availablePipelines } = wizardState;
+
+    const getUsername = () => {
+        try { return JSON.parse(localStorage.getItem('user'))?.username || 'User'; }
+        catch { return 'User'; }
+    };
 
     const selectedPipelineData = availablePipelines.find(p => p.pipeline_id === selectedPipeline);
 
@@ -63,11 +69,7 @@ export default function StepReview({ onComplete }) {
 
             const data = await response.json();
             console.log('Success response:', data);
-            alert(`Job created successfully! Job ID: ${data.job_id}`);
-
-            // Reset wizard and go back to dashboard
-            resetWizard();
-            onComplete();
+            setSuccessData({ jobId: data.job_id, username: getUsername() });
         } catch (err) {
             const errorMsg = err.message || 'Failed to submit job';
             setError(errorMsg);
@@ -76,6 +78,28 @@ export default function StepReview({ onComplete }) {
             setIsSubmitting(false);
         }
     };
+
+    if (successData) {
+        return (
+            <div className="sr-success-overlay">
+                <div className="sr-success-card">
+                    <div className="sr-success-icon">✓</div>
+                    <h2 className="sr-success-title">Job Submitted</h2>
+                    <p className="sr-success-sub">
+                        <strong>{successData.username}</strong> submitted a new sorting job.
+                    </p>
+                    <div className="sr-success-id-label">Job ID</div>
+                    <div className="sr-success-id">{successData.jobId}</div>
+                    <button
+                        className="sr-success-btn"
+                        onClick={() => { resetWizard(); onComplete(); }}
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="step-container">

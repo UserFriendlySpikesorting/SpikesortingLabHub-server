@@ -655,3 +655,84 @@
         grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
     }
 }
+/* ── Job submission success modal ── */
+.sr-success-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 40px 20px;
+}
+
+.sr-success-card {
+    background: #fff;
+    border: 1px solid #e8e7e0;
+    border-radius: 20px;
+    padding: 52px 48px;
+    max-width: 460px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.07);
+}
+
+.sr-success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #28a745;
+    color: #fff;
+    font-size: 1.6em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+
+.sr-success-title {
+    font-size: 1.5em;
+    font-weight: 500;
+    color: #1e1e1e;
+    margin: 0 0 10px;
+    letter-spacing: -0.3px;
+}
+
+.sr-success-sub {
+    font-size: 0.92em;
+    color: #777;
+    margin: 0 0 28px;
+}
+
+.sr-success-id-label {
+    font-size: 0.7em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+.sr-success-id {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.82em;
+    color: #333;
+    background: #f7f6f1;
+    border: 1px solid #e8e7e0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    word-break: break-all;
+    margin-bottom: 32px;
+}
+
+.sr-success-btn {
+    background: #1e1e1e;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+}
+.sr-success-btn:hover { background: #333; }

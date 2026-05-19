@@ -20,10 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-only-change-in-production")
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-w7ub%5ia5q0bk%(gdht0wn1zmu6e92_*4wsrs3i%9@90u!u=a4",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() not in ("false", "0", "no")
 
 ALLOWED_HOSTS = ["*", "localhost"]
 
@@ -83,10 +86,16 @@ WSGI_APPLICATION = "labhub.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DATABASE_PATH = os.environ.get(
+    "DATABASE_PATH",
+    str(BASE_DIR / "django_db" / "db.sqlite3"),
+)
+os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "Django_database" / "db.sqlite3",
+        "NAME": DATABASE_PATH,
     }
 }
 
@@ -180,10 +189,10 @@ NAS_ROOT = os.environ.get("NAS_ROOT", str(BASE_DIR / "experiments"))
 # No separate React dev server (port 3000) is used. Add origins here only if
 # an external client needs to call the API.
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "https://localhost:8443",
-    "https://127.0.0.1:8443",
+    "http://localhost:9000",
+    "http://127.0.0.1:9000",
+    "https://localhost:9443",
+    "https://127.0.0.1:9443",
 ]
 
 # -----------------------------------------------------------------------------

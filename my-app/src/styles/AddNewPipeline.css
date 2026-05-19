@@ -81,6 +81,27 @@
     line-height: 1.5;
 }
 
+.pipeline-description-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: 1px solid #e0dfd8;
+    border-radius: 6px;
+    font-size: 0.92em;
+    color: #333;
+    background: #faf9f6;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+.pipeline-description-input:focus {
+    outline: none;
+    border-color: #8a9a6a;
+    background: #fff;
+}
+
 /* JSON upload box */
 .json-upload-section {
     background: #fafaf8;
@@ -573,3 +594,84 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ── Pipeline creation success card ── */
+.anp-success-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 40px 20px;
+}
+
+.anp-success-card {
+    background: #fff;
+    border: 1px solid #e8e7e0;
+    border-radius: 20px;
+    padding: 52px 48px;
+    max-width: 460px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.07);
+}
+
+.anp-success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #28a745;
+    color: #fff;
+    font-size: 1.6em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+
+.anp-success-title {
+    font-size: 1.5em;
+    font-weight: 500;
+    color: #1e1e1e;
+    margin: 0 0 10px;
+    letter-spacing: -0.3px;
+}
+
+.anp-success-sub {
+    font-size: 0.92em;
+    color: #777;
+    margin: 0 0 28px;
+}
+
+.anp-success-id-label {
+    font-size: 0.7em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+.anp-success-id {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 1.1em;
+    color: #333;
+    background: #f7f6f1;
+    border: 1px solid #e8e7e0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 32px;
+}
+
+.anp-success-btn {
+    background: #1e1e1e;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+}
+.anp-success-btn:hover { background: #333; }

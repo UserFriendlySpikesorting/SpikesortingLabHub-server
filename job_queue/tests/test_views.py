@@ -54,7 +54,7 @@ class GetNextJobViewTests(APITestCase):
         self.user = User.objects.create_user(username="worker", password="pass")
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
-        self.url = "/job-queue/getthenextjob/"
+        self.url = "/job-queue/next-job/"
         self.recording_hash = get_or_create_step_configs("recording", {"binfile": "/test.bin"})
 
     def _create_job(self):

@@ -55,7 +55,7 @@ class SortingJobEndToEndTests(APITestCase):
         job_data = self._create_job(pipeline_id)
         recording_hash = job_data["recording_identifier"]
 
-        fetched = self.client.get("/job-queue/getthenextjob/").json()
+        fetched = self.client.get("/job-queue/next-job/").json()
         preprocessing = next(s for s in fetched["job_steps"] if s["function"] == "preprocessing")
 
         self.assertEqual(preprocessing["depends"], [recording_hash])
@@ -64,7 +64,7 @@ class SortingJobEndToEndTests(APITestCase):
         """Every step in job_steps must have a config block keyed by its identifier."""
         pipeline_id = self._create_pipeline()
         self._create_job(pipeline_id)
-        fetched = self.client.get("/job-queue/getthenextjob/").json()
+        fetched = self.client.get("/job-queue/next-job/").json()
 
         for step in fetched["job_steps"]:
             self.assertIn(step["identifier"], fetched,
@@ -78,22 +78,23 @@ class SortingJobEndToEndTests(APITestCase):
         self.assertEqual(job1["recording_identifier"], job2["recording_identifier"])
 
     def test_job_status_transitions_correctly(self):
-        """Job must move: pending → fetched → running → finished."""
+        """Job must move: pending → fetched → running → completed."""
         pipeline_id = self._create_pipeline()
         job_id = self._create_job(pipeline_id)["job_id"]
-        status_url = f"/submit-jobs/status/{job_id}/"
-        worker_url = "/job-queue/getthenextjob/"
+        status_url = f"/job-queue/{job_id}/"
+        next_job_url = "/job-queue/next-job/"
+        update_url = "/job-queue/update-status/"
 
         self.assertEqual(self.client.get(status_url).json()["status"], "pending")
 
-        self.client.get(worker_url)
+        self.client.get(next_job_url)
         self.assertEqual(self.client.get(status_url).json()["status"], "fetched")
 
-        self.client.post(worker_url, {"job_id": job_id, "status": "running"}, format="json")
+        self.client.post(update_url, {"job_id": job_id, "status": "running"}, format="json")
         self.assertEqual(self.client.get(status_url).json()["status"], "running")
 
-        self.client.post(worker_url, {"job_id": job_id, "status": "finished"}, format="json")
-        self.assertEqual(self.client.get(status_url).json()["status"], "finished")
+        self.client.post(update_url, {"job_id": job_id, "status": "completed"}, format="json")
+        self.assertEqual(self.client.get(status_url).json()["status"], "completed")
 
     def test_job_step_count_is_pipeline_steps_plus_recording(self):
         pipeline_id = self._create_pipeline()

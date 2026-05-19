@@ -129,8 +129,7 @@ class JobListSerializer(serializers.ModelSerializer):
         return obj.jobstep_set.count()
 
     def get_completed_steps(self, obj):
-        """Returns the number of steps with status 'finished'."""
-        return obj.jobstep_set.filter(status="finished").count()
+        return obj.jobstep_set.filter(status="completed").count()
 
     def get_job_env(self, obj):
         """Extracts the key environment fields from the job_env_config JSON blob."""

@@ -4,10 +4,16 @@ import '../styles/AddNewPipeline.css';
 export default function AddNewPipeline({ onBack }) {
     const [jsonFile, setJsonFile] = useState(null);
     const [fileContent, setFileContent] = useState(null);
+    const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [successData, setSuccessData] = useState(null); // { pipelineId, username }
     const [fileValidationError, setFileValidationError] = useState('');
+
+    const getUsername = () => {
+        try { return JSON.parse(localStorage.getItem('user'))?.username || 'User'; }
+        catch { return 'User'; }
+    };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -35,10 +41,15 @@ export default function AddNewPipeline({ onBack }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        setSuccess('');
+        setSuccessData(null);
 
         if (!fileContent) {
             setError('Please select and validate a JSON file first');
+            return;
+        }
+
+        if (!description.trim()) {
+            setError('Please enter a description for the pipeline');
             return;
         }
 
@@ -57,7 +68,7 @@ export default function AddNewPipeline({ onBack }) {
                     'Content-Type': 'application/json',
                     'Authorization': `Token ${token}`,
                 },
-                body: JSON.stringify(fileContent),
+                body: JSON.stringify({ ...fileContent, description: description.trim() }),
             });
 
             if (!response.ok) {
@@ -66,15 +77,7 @@ export default function AddNewPipeline({ onBack }) {
             }
 
             const data = await response.json();
-            setSuccess(`Pipeline created successfully. Pipeline ID: ${data.pipeline_id}`);
-
-            // Reset form after success
-            setTimeout(() => {
-                setJsonFile(null);
-                setFileContent(null);
-                setFileValidationError('');
-                document.getElementById('json-file-input').value = '';
-            }, 2000);
+            setSuccessData({ pipelineId: data.pipeline_id, username: getUsername() });
         } catch (err) {
             setError(err.message || 'Failed to create pipeline');
             console.error('Error:', err);
@@ -82,6 +85,27 @@ export default function AddNewPipeline({ onBack }) {
             setIsSubmitting(false);
         }
     };
+
+    if (successData) {
+        return (
+            <div className="pipeline-form-container">
+                <div className="anp-success-overlay">
+                    <div className="anp-success-card">
+                        <div className="anp-success-icon">✓</div>
+                        <h2 className="anp-success-title">Pipeline Created</h2>
+                        <p className="anp-success-sub">
+                            <strong>{successData.username}</strong> created a new pipeline.
+                        </p>
+                        <div className="anp-success-id-label">Pipeline ID</div>
+                        <div className="anp-success-id">{successData.pipelineId}</div>
+                        <button className="anp-success-btn" onClick={onBack}>
+                            Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="pipeline-form-container">
@@ -92,6 +116,18 @@ export default function AddNewPipeline({ onBack }) {
             </div>
 
             <form onSubmit={handleSubmit} className="pipeline-form">
+                {/* Description */}
+                <div className="form-section">
+                    <h3>Pipeline Description</h3>
+                    <textarea
+                        className="pipeline-description-input"
+                        placeholder="Enter a description for this pipeline..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={3}
+                    />
+                </div>
+
                 {/* JSON File Upload */}
                 <div className="form-section json-upload-section">
                     <h3>Upload Pipeline JSON</h3>
@@ -148,7 +184,6 @@ export default function AddNewPipeline({ onBack }) {
 
                 {/* Messages */}
                 {error && <div className="error-message">{error}</div>}
-                {success && <div className="success-message">{success}</div>}
 
                 {/* Submit Button */}
                 <div className="form-actions">

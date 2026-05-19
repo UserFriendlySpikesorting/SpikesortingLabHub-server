@@ -99,10 +99,10 @@ class PipelineToJobIntegrationTests(APITestCase):
         pipeline_id = self._create_pipeline().json()["pipeline_id"]
         job_id = self._create_sorting_job(pipeline_id).json()["job_id"]
 
-        status_before = self.client.get(f"/submit-jobs/status/{job_id}/").json()["status"]
+        status_before = self.client.get(f"/job-queue/{job_id}/").json()["status"]
         self.assertEqual(status_before, "pending")
 
-        self.client.get("/job-queue/getthenextjob/")
+        self.client.get("/job-queue/next-job/")
 
-        status_after = self.client.get(f"/submit-jobs/status/{job_id}/").json()["status"]
+        status_after = self.client.get(f"/job-queue/{job_id}/").json()["status"]
         self.assertEqual(status_after, "fetched")

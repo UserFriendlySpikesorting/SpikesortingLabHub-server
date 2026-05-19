@@ -15,7 +15,8 @@ class WorkerJobLifecycleIntegrationTests(APITestCase):
         self.user = User.objects.create_user(username="worker", password="pass")
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
-        self.url = "/job-queue/getthenextjob/"
+        self.next_job_url = "/job-queue/next-job/"
+        self.update_url = "/job-queue/update-status/"
 
     def _create_two_step_job(self):
         recording_hash = get_or_create_step_configs("recording", {"binfile": "/data/test.bin"})
@@ -29,39 +30,39 @@ class WorkerJobLifecycleIntegrationTests(APITestCase):
         )
 
     def test_full_job_lifecycle(self):
-        """pending → fetched → running (per step) → finished."""
+        """pending → fetched → running (per step) → completed."""
         job = self._create_two_step_job()
 
         # Worker fetches the job
-        data = self.client.get(self.url).json()
+        data = self.client.get(self.next_job_url).json()
         self.assertEqual(data["job_id"], str(job.job_id))
         job.refresh_from_db()
         self.assertEqual(job.status, "fetched")
 
         # Worker marks job running
-        self.client.post(self.url, {"job_id": str(job.job_id), "status": "running"}, format="json")
+        self.client.post(self.update_url, {"job_id": str(job.job_id), "status": "running"}, format="json")
         job.refresh_from_db()
         self.assertEqual(job.status, "running")
 
         # Worker completes each step
         for step in job.jobstep_set.all():
             self.client.post(
-                self.url,
+                self.update_url,
                 {"job_id": str(job.job_id), "step_id": step.identifier, "status": "completed"},
                 format="json",
             )
             step.refresh_from_db()
             self.assertEqual(step.status, "completed")
 
-        # Worker marks job finished
-        self.client.post(self.url, {"job_id": str(job.job_id), "status": "finished"}, format="json")
+        # Worker marks job completed
+        self.client.post(self.update_url, {"job_id": str(job.job_id), "status": "completed"}, format="json")
         job.refresh_from_db()
-        self.assertEqual(job.status, "finished")
+        self.assertEqual(job.status, "completed")
 
     def test_config_blocks_present_in_worker_payload(self):
         """Worker payload must include config blocks keyed by step identifier."""
         self._create_two_step_job()
-        data = self.client.get(self.url).json()
+        data = self.client.get(self.next_job_url).json()
         for step in data["job_steps"]:
             self.assertIn(step["identifier"], data, f"Config block missing for step '{step['function']}'")
 
@@ -72,14 +73,14 @@ class WorkerJobLifecycleIntegrationTests(APITestCase):
         job1 = create_a_job({"environment": "local"}, steps)
         job2 = create_a_job({"environment": "local"}, steps)
 
-        fetch1 = self.client.get(self.url).json()
-        fetch2 = self.client.get(self.url).json()
+        fetch1 = self.client.get(self.next_job_url).json()
+        fetch2 = self.client.get(self.next_job_url).json()
 
         self.assertEqual(fetch1["job_id"], str(job1.job_id))
         self.assertEqual(fetch2["job_id"], str(job2.job_id))
 
     def test_empty_queue_returns_empty_dict(self):
-        response = self.client.get(self.url)
+        response = self.client.get(self.next_job_url)
         self.assertEqual(response.json(), {})
 
     def test_same_stepconfig_reused_across_jobs(self):

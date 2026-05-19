@@ -128,7 +128,7 @@ class ListJobsViewTests(APITestCase):
         self.user = User.objects.create_user(username="researcher", password="pass")
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
-        self.url = "/submit-jobs/list/"
+        self.url = "/job-queue/list/"
         recording_hash = get_or_create_step_configs("recording", {"binfile": "/test.bin"})
         steps = [{"function": "recording", "identifier": recording_hash, "depends": []}]
         create_a_job({"environment": "local"}, steps)
@@ -162,7 +162,7 @@ class ListJobsViewTests(APITestCase):
 
 
 # ============================================================================
-# GET /submit-jobs/statistics/
+# GET /job-queue/statistics/
 # ============================================================================
 
 
@@ -173,7 +173,7 @@ class JobStatisticsViewTests(APITestCase):
         self.user = User.objects.create_user(username="researcher", password="pass")
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
-        self.url = "/submit-jobs/statistics/"
+        self.url = "/job-queue/statistics/"
 
     def test_returns_200(self):
         self.assertEqual(self.client.get(self.url).status_code, 200)
@@ -185,7 +185,7 @@ class JobStatisticsViewTests(APITestCase):
 
     def test_breakdown_covers_all_five_statuses(self):
         breakdown = self.client.get(self.url).json()["status_breakdown"]
-        for s in ("pending", "fetched", "running", "finished", "failed"):
+        for s in ("pending", "fetched", "running", "completed", "failed"):
             self.assertIn(s, breakdown)
 
     def test_total_jobs_matches_sum_of_breakdown(self):
@@ -194,7 +194,7 @@ class JobStatisticsViewTests(APITestCase):
 
 
 # ============================================================================
-# GET /submit-jobs/<job_id>/  (job_detail)
+# GET /job-queue/<job_id>/  (job_detail)
 # ============================================================================
 
 
@@ -212,13 +212,13 @@ class JobDetailViewTests(APITestCase):
         )
 
     def test_returns_200_for_existing_job(self):
-        response = self.client.get(f"/submit-jobs/{self.job.job_id}/")
+        response = self.client.get(f"/job-queue/{self.job.job_id}/")
         self.assertEqual(response.status_code, 200)
 
     def test_returns_correct_job_id(self):
-        data = self.client.get(f"/submit-jobs/{self.job.job_id}/").json()
+        data = self.client.get(f"/job-queue/{self.job.job_id}/").json()
         self.assertEqual(data["job_id"], str(self.job.job_id))
 
     def test_returns_404_for_nonexistent_job(self):
-        response = self.client.get("/submit-jobs/00000000-0000-0000-0000-000000000000/")
+        response = self.client.get("/job-queue/00000000-0000-0000-0000-000000000000/")
         self.assertEqual(response.status_code, 404)
