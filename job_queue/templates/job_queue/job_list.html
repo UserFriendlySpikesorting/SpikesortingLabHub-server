@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>QModel Job List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #282c34;
+            color: white;
+            text-align: center;
+            padding-top: 70px;
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            margin: auto;
+            width: 45%;
+            border-radius: 14px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        table {
+            margin: 30px auto;
+            width: 80%;
+            border-collapse: collapse;
+            background-color: white;
+            color: black;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        thead {
+            background-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Submitted Jobs</h1>
+        {% if messages %}
+        {% for m in messages %}
+        <p class="message {% if m.tags %}{{ m.tags }}{% endif %}">{{ m }}</p>
+        {% endfor %}
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Job ID</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>{{ job.job_id }}</td>
+                    <td>{{ job.status }}</td>
+                    <td>{{ job.created_at }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No jobs submitted yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>

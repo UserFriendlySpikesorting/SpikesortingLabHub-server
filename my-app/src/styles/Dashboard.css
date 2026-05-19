@@ -1,0 +1,187 @@
+/* ── Minimalist Dashboard ── */
+.dashboard-container {
+    min-height: 100vh;
+    background: #f0efe8;
+    padding: 48px 56px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+}
+
+/* Greeting */
+.dashboard-greeting {
+    margin-bottom: 48px;
+}
+
+.dashboard-greeting h1 {
+    font-size: 2.6em;
+    font-weight: 400;
+    color: #1e1e1e;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.5px;
+}
+
+.dashboard-greeting p {
+    font-size: 0.95em;
+    color: #888;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Section heading */
+.section-title {
+    font-size: 1.25em;
+    font-weight: 500;
+    color: #1e1e1e;
+    margin: 0 0 24px 0;
+    letter-spacing: -0.2px;
+}
+
+/* Action cards grid */
+.dashboard-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 56px;
+}
+
+.action-card {
+    border-radius: 14px;
+    padding: 32px 28px 28px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    min-height: 220px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.action-card:hover {
+    transform: translateY(-3px);
+    opacity: 0.92;
+}
+
+/* Individual card colors */
+.create-job {
+    background: #8fa06e;
+}
+
+.add-pipeline {
+    background: #b57d5a;
+}
+
+.manage-jobs {
+    background: #c5ca85;
+}
+
+/* Card icon */
+.card-icon-label {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card-icon-label svg {
+    width: 14px;
+    height: 14px;
+}
+
+.action-card h3 {
+    margin: 4px 0 0;
+    font-size: 1.25em;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.3;
+}
+
+.action-card p {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.55);
+    font-size: 0.88em;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+/* Tags at bottom of card */
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.card-tag {
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+/* Workspace section */
+.workspace-section {
+    margin-top: 4px;
+}
+
+.workspace-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.workspace-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 28px;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    border: 1px solid #e8e7e0;
+}
+
+.workspace-card h4 {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.workspace-stat {
+    font-size: 2.2em;
+    font-weight: 300;
+    color: #1e1e1e;
+    margin: 0;
+    line-height: 1;
+}
+
+.workspace-stat-label {
+    font-size: 0.85em;
+    color: #aaa;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .dashboard-container {
+        padding: 32px 24px;
+    }
+
+    .dashboard-actions,
+    .workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
