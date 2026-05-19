@@ -6,7 +6,7 @@ handshake itself with no reverse proxy needed.
 
 Usage:
     HTTP:   gunicorn -c gunicorn.conf.py labhub.wsgi:application
-    HTTPS:  gunicorn -c gunicorn.conf.py --certfile=secrets/cert.crt --keyfile=secrets/cert.key -b 0.0.0.0:443 labhub.wsgi:application
+    HTTPS:  gunicorn -c gunicorn.conf.py --certfile=cert.crt --keyfile=cert.key -b 0.0.0.0:9443 labhub.wsgi:application
 
 On Linux, binding to port 443 requires one of:
     sudo gunicorn ...
@@ -18,7 +18,7 @@ import multiprocessing
 # -----------------------------------------------------------------------------
 # Server socket  (overridden by -b on the command line when using HTTPS)
 # -----------------------------------------------------------------------------
-bind = "0.0.0.0:8000"
+bind = "0.0.0.0:9000"
 backlog = 2048
 
 # -----------------------------------------------------------------------------

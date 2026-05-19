@@ -1,0 +1,9 @@
+# Nothing is COPY'd into the image — the Dockerfile clones from GitHub.
+# This file is kept as a safeguard in case a COPY is added later.
+
+# Secrets — never bake certs or keys into the image
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
