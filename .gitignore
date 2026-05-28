@@ -69,3 +69,6 @@ experiments/
 # Local databases
 NAS_Database/
 Django_database/
+.claudeignore
+.claudeignore
+.claudeignore
