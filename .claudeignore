@@ -1,0 +1,40 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node / React
+node_modules/
+my-app/build/
+my-app/dist/
+my-app/package-lock.json
+
+# Django build output
+staticfiles/
+build/
+dist/
+
+# Databases
+NAS_Database/
+Django_database/
+*.sqlite
+*.sqlite3
+*.db
+
+# Credentials & secrets
+.env
+cert.crt
+cert.key
+*.pem
+
+# Logs & coverage
+*.log
+coverage/
+
+# IDE
+.vscode/
+
+# Git internals
+.git/
