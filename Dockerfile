@@ -33,10 +33,10 @@ RUN apt-get install -y --no-install-recommends \
 # 2. Download repository (docker branch) and unpack
 # ------------------------------------------------------------
 WORKDIR /app
-RUN wget -q https://github.com/UserFriendlySpikesorting/SpikesortingLabHub-server/archive/refs/heads/main.zip \
-    && unzip -q main.zip \
-    && mv SpikesortingLabHub-server-main/* . \
-    && rm -rf main.zip SpikesortingLabHub-server-main
+RUN wget -q https://github.com/UserFriendlySpikesorting/SpikesortingLabHub-server/archive/refs/heads/developing_branch.zip \
+    && unzip -q developing_branch.zip \
+    && mv SpikesortingLabHub-server-developing_branch/* . \
+    && rm -rf developing_branch.zip SpikesortingLabHub-server-developing_branch
 
 # ------------------------------------------------------------
 # 3. Set up Python virtual environment and install requirements
