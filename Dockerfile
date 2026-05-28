@@ -32,11 +32,11 @@ RUN apt-get install -y --no-install-recommends \
 # ------------------------------------------------------------
 # 2. Download repository (docker branch) and unpack
 # ------------------------------------------------------------
-RUN mkdir /app
 WORKDIR /app
-RUN wget https://github.com/iKajalpatel21/spikesorting-labhub-try-error/archive/refs/heads/docker.zip
-RUN unzip docker.zip
-RUN mv spikesorting-labhub-try-error-docker/* .
+RUN wget -q https://github.com/UserFriendlySpikesorting/SpikesortingLabHub-server/archive/refs/heads/main.zip \
+    && unzip -q main.zip \
+    && mv SpikesortingLabHub-server-main/* . \
+    && rm -rf main.zip SpikesortingLabHub-server-main
 
 # ------------------------------------------------------------
 # 3. Set up Python virtual environment and install requirements
