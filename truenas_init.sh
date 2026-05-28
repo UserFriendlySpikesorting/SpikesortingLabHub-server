@@ -26,16 +26,15 @@ REQUIRED_DIRS=(
     "/mnt/root_data_storage/users/sslh/trurnasdata"
     "/mnt/root_data_storage/users/sslh/persistentdata"
     "/mnt/root_data_storage/users/sslh/secrets"
-    "/mnt/root_data_storage/experiments"
+    "/mnt/root_data_storage/users/sslh/experiments"
 )
 
 for DIR in "${REQUIRED_DIRS[@]}"; do
     if [ ! -d "$DIR" ]; then
-        echo "ERROR: Required directory missing: $DIR"
-        echo "  Create the dataset in TrueNAS before booting the container."
-        exit 1
+        mkdir "$DIR" && chown -R sslh "$DIR"
     fi
     echo "OK: $DIR"
 done
-
+mount -o bind,ro /data /mnt/root_data_storage/users/sslh/trurnasdata
+mount -o bind,ro /mnt/root_data_storage/experiments /mnt/root_data_storage/users/sslh/experiments
 echo "=== $(date) All directories present — Docker may start ==="
