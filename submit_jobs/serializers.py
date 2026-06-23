@@ -155,6 +155,35 @@ class JobSerializer(serializers.ModelSerializer):
         read_only_fields = ["job_id", "status", "created_at"]
 
 
+class CombineDownsampleSerializer(serializers.Serializer):
+    """
+    Validates a combine-and-downsample job request.
+    All input_files must be absolute server-side paths to .dat files.
+    """
+
+    input_files = serializers.ListField(
+        child=serializers.CharField(min_length=1),
+        min_length=1,
+    )
+    num_channels = serializers.IntegerField(min_value=1)
+    downsample_factor = serializers.IntegerField(min_value=2, required=False, default=30)
+    mode = serializers.ChoiceField(
+        choices=['both', 'combine', 'downsample'],
+        required=False,
+        default='both',
+    )
+    output_name = serializers.CharField(required=False, allow_blank=True, default='')
+    output_folder = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def validate_input_files(self, paths):
+        for p in paths:
+            if not p.startswith('/'):
+                raise serializers.ValidationError(
+                    f"Each path must be absolute (start with /): {p!r}"
+                )
+        return paths
+
+
 class JobCreationLogSerializer(serializers.ModelSerializer):
     """
     Serializes a JobCreationLog audit record for inspection and debugging.

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import CreateSortingJobWizard from './CreateSortingJobWizard';
 import AddNewPipeline from './AddNewPipeline';
 import ManageJobs from './ManageJobs';
+import CombineAndDownsample from './CombineAndDownsample';
 import '../styles/Dashboard.css';
 
 function getGreeting() {
@@ -26,6 +27,10 @@ export default function Dashboard() {
 
     if (activeSection === 'manageJobs') {
         return <ManageJobs onBack={() => setActiveSection('home')} />;
+    }
+
+    if (activeSection === 'combineDs') {
+        return <CombineAndDownsample onBack={() => setActiveSection('home')} />;
     }
 
     return (
@@ -99,6 +104,27 @@ export default function Dashboard() {
                         <span className="card-tag">History</span>
                         <span className="card-tag">Status</span>
                         <span className="card-tag">Progress</span>
+                    </div>
+                </div>
+
+                <div
+                    className="action-card combine-ds"
+                    onClick={() => setActiveSection('combineDs')}
+                >
+                    <div className="card-icon-label">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <rect x="2" y="2" width="12" height="3" rx="1"/>
+                            <rect x="2" y="6.5" width="12" height="3" rx="1"/>
+                            <rect x="2" y="11" width="12" height="3" rx="1"/>
+                        </svg>
+                        Preprocessing
+                    </div>
+                    <h3>Combine &amp; Downsample</h3>
+                    <p>Merge multiple .dat recordings into one file and downsample to LFP in a single pass.</p>
+                    <div className="card-tags">
+                        <span className="card-tag">Combine</span>
+                        <span className="card-tag">Downsample</span>
+                        <span className="card-tag">.mat</span>
                     </div>
                 </div>
             </div>

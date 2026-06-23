@@ -6,4 +6,5 @@ app_name = "submit_jobs"
 urlpatterns = [
     path("create-sorting-job/", views.create_sorting_job, name="create_sorting_job"),
     path("browse/", views.browse_data_files, name="browse_data_files"),
+    path("combine-downsample/", views.combine_downsample_job, name="combine_downsample_job"),
 ]

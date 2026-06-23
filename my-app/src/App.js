@@ -14,7 +14,7 @@ function DashboardLayout() {
       {/* App nav bar */}
       <div style={{
         position: 'fixed',
-        top: '32px',
+        top: 0,
         left: 0,
         right: 0,
         height: '52px',
@@ -52,8 +52,8 @@ function DashboardLayout() {
           </button>
         </div>
       </div>
-      {/* Push content below both bars */}
-      <div style={{ paddingTop: '84px' }}>
+      {/* Push content below the fixed navbar */}
+      <div style={{ paddingTop: '52px' }}>
         <Dashboard />
       </div>
     </div>

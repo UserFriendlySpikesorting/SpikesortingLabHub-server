@@ -115,6 +115,8 @@
     padding: 12px;
     background: #f9f9f9;
     border-radius: 4px;
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 .checkbox-label {
@@ -250,6 +252,8 @@
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
     gap: 8px;
     margin-bottom: 15px;
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 .channel-btn {

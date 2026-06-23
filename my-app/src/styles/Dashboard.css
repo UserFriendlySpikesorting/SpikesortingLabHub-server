@@ -39,7 +39,7 @@
 /* Action cards grid */
 .dashboard-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 20px;
     margin-bottom: 56px;
 }
@@ -73,6 +73,10 @@
 
 .manage-jobs {
     background: #c5ca85;
+}
+
+.combine-ds {
+    background: #7a9eb5;
 }
 
 /* Card icon */

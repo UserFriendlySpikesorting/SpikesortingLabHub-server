@@ -12,7 +12,7 @@ from .models import (
     resolve_placeholder_dependencies,
     build_job_env_config,
 )
-from .serializers import CreateSortingJobSerializer
+from .serializers import CreateSortingJobSerializer, CombineDownsampleSerializer
 
 
 def strip_nas_root(path: str) -> str:
@@ -155,3 +155,119 @@ def browse_data_files(request):
         cursor = os.path.dirname(cursor)
 
     return Response({"current_path": requested, "parents": parents, "dirs": dirs, "files": files})
+
+
+# ============================================================================
+# Combine & Downsample Job Endpoint
+# ============================================================================
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def combine_downsample_job(request):
+    """
+    POST: Create a standalone combine-and-downsample job.
+
+    Expected JSON body:
+        {
+          "input_files":      ["/abs/path/to/recording1/continuous.dat", ...],
+          "num_channels":     64,
+          "downsample_factor": 30,          // ignored when mode == "combine"
+          "mode":             "both",       // "both" | "combine" | "downsample"
+          "output_name":      "session01",  // optional
+          "output_folder":    "/mnt/nas/out" // optional
+        }
+    """
+    serializer = CombineDownsampleSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    vd = serializer.validated_data
+    mode = vd["mode"]
+
+    step_config = {
+        "input files":        vd["input_files"],
+        "number of channels": vd["num_channels"],
+        "downsample factor":  vd["downsample_factor"],
+        "mode":               mode,
+    }
+    if vd.get("output_name"):
+        step_config["output name"] = vd["output_name"]
+    if vd.get("output_folder"):
+        step_config["output folder"] = strip_nas_root(vd["output_folder"])
+
+    # Paths on the NAS should be stored with the $NAS$ prefix so the worker
+    # can substitute its own mount point at runtime.
+    step_config["input files"] = [strip_nas_root(p) for p in step_config["input files"]]
+
+    try:
+        identifier = get_or_create_step_configs("combine_and_downsample", step_config)
+    except RuntimeError as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    job_env = {
+        "base directory": "$LOCAL$/$JOB_ID$",
+        "log_level": "DEBUG",
+        "REDIRECT": {
+            "log": "$NAS$/SORTING_LOGS/$JOB_ID$/run.log",
+            "out": "$NAS$/SORTING_LOGS/$JOB_ID$/run.out",
+            "err": "$NAS$/SORTING_LOGS/$JOB_ID$/run.err",
+        },
+    }
+
+    job_steps = [
+        {"function": "combine_and_downsample", "identifier": identifier, "depends": []}
+    ]
+
+    try:
+        job = create_a_job(job_env, job_steps)
+    except RuntimeError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Infer expected output location from the first input file.
+    # Open Ephys layout: <session>/RecordNode/experiment/recording/continuous/<processor>/continuous.dat
+    # Walking 6 levels up reaches the session root.
+    first_input = vd["input_files"][0]
+    p = os.path.abspath(first_input)
+    for _ in range(6):
+        p = os.path.dirname(p)
+    session_name = os.path.basename(p)
+    session_parent = os.path.dirname(p)
+
+    if vd.get("output_folder"):
+        out_dir = vd["output_folder"]
+    else:
+        out_dir = os.path.join(session_parent, f"combined_{session_name}")
+
+    name = vd.get("output_name") or session_name
+
+    mode_labels = {
+        "both":       "Combine + Downsample",
+        "combine":    "Combine",
+        "downsample": "Downsample",
+    }
+    output_files = []
+    if mode in ("both", "combine"):
+        fname = f"combined_raw_{name}.dat"
+        output_files.append({
+            "name": fname,
+            "path": os.path.join(out_dir, fname),
+            "description": "full-rate int16 binary",
+        })
+    if mode in ("both", "downsample"):
+        fname = f"combined_ds{vd['downsample_factor']}_{name}.h5"
+        output_files.append({
+            "name": fname,
+            "path": os.path.join(out_dir, fname),
+            "description": f"downsampled LFP at {30000 // vd['downsample_factor']} Hz",
+        })
+
+    return Response(
+        {
+            "operation":    mode_labels[mode],
+            "input_files":  vd["input_files"],
+            "output_folder": out_dir,
+            "output_files": output_files,
+        },
+        status=status.HTTP_201_CREATED,
+    )

@@ -1,0 +1,405 @@
+/* ── Combine & Downsample Page ── */
+.cds-container {
+    min-height: 100vh;
+    background: #f0efe8;
+    padding: 48px 56px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+}
+
+/* Back button */
+.cds-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.88em;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 36px;
+    transition: color 0.15s;
+}
+.cds-back:hover { color: #444; }
+.cds-back svg { width: 14px; height: 14px; }
+
+/* Page header */
+.cds-header {
+    margin-bottom: 40px;
+}
+.cds-header .cds-label {
+    font-size: 0.78em;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin: 0 0 8px 0;
+}
+.cds-header h1 {
+    font-size: 2.2em;
+    font-weight: 400;
+    color: #1e1e1e;
+    margin: 0;
+    letter-spacing: -0.4px;
+}
+
+/* Mode selector */
+.cds-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 40px;
+}
+
+.cds-mode-card {
+    background: #fff;
+    border: 1.5px solid #e4e3dc;
+    border-radius: 14px;
+    padding: 22px 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cds-mode-card:hover {
+    border-color: #bbb;
+}
+.cds-mode-card.selected {
+    border-color: #1e1e1e;
+    box-shadow: 0 0 0 1px #1e1e1e;
+}
+
+.cds-mode-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f0efe8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+.cds-mode-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: #555;
+}
+.cds-mode-card.selected .cds-mode-icon {
+    background: #1e1e1e;
+}
+.cds-mode-card.selected .cds-mode-icon svg {
+    stroke: #fff;
+}
+
+.cds-mode-card h3 {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 500;
+    color: #1e1e1e;
+}
+.cds-mode-card p {
+    margin: 0;
+    font-size: 0.83em;
+    color: #999;
+    line-height: 1.5;
+}
+
+/* Form */
+.cds-form {
+    background: #fff;
+    border: 1px solid #e4e3dc;
+    border-radius: 16px;
+    padding: 36px;
+    max-width: 760px;
+}
+
+.cds-form-title {
+    font-size: 1em;
+    font-weight: 500;
+    color: #1e1e1e;
+    margin: 0 0 28px 0;
+}
+
+.cds-field {
+    margin-bottom: 24px;
+}
+.cds-field label {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 8px;
+    letter-spacing: -0.1px;
+}
+.cds-field input[type="number"],
+.cds-field input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e4e3dc;
+    border-radius: 8px;
+    font-size: 0.9em;
+    color: #1e1e1e;
+    background: #fafaf8;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+    font-family: inherit;
+}
+.cds-field input:focus,
+.cds-field textarea:focus {
+    outline: none;
+    border-color: #aaa;
+    background: #fff;
+}
+
+.cds-field .cds-hint {
+    font-size: 0.78em;
+    color: #bbb;
+    margin-top: 5px;
+}
+
+/* File drop zone */
+.cds-dropzone {
+    border: 1.5px dashed #d4d3cc;
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: #fafaf8;
+}
+.cds-dropzone:hover {
+    border-color: #aaa;
+    background: #f5f4ed;
+}
+.cds-dropzone input[type="file"] {
+    display: none;
+}
+.cds-dropzone-icon {
+    margin-bottom: 10px;
+    color: #bbb;
+}
+.cds-dropzone-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #bbb;
+}
+.cds-dropzone p {
+    margin: 0 0 4px;
+    font-size: 0.88em;
+    color: #777;
+    font-weight: 500;
+}
+.cds-dropzone span {
+    font-size: 0.78em;
+    color: #bbb;
+}
+
+/* File list */
+.cds-file-list {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cds-file-item {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    row-gap: 1px;
+    align-items: start;
+    background: #f5f4ed;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.82em;
+    color: #444;
+    border: 1px solid #e9e8e0;
+}
+.cds-file-idx {
+    grid-row: 1 / 3;
+    align-self: center;
+    font-size: 0.78em;
+    font-weight: 600;
+    color: #bbb;
+    text-align: right;
+    flex-shrink: 0;
+}
+.cds-file-name {
+    font-weight: 500;
+    color: #1e1e1e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cds-file-path {
+    grid-column: 2;
+    font-size: 0.9em;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.cds-file-remove {
+    grid-row: 1 / 3;
+    align-self: center;
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.cds-file-remove:hover { color: #e05555; }
+
+/* Browse button */
+.cds-browse-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    background: #f5f4ed;
+    border: 1px solid #d4d3cc;
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+.cds-browse-btn:hover {
+    background: #eceae0;
+    border-color: #bbb;
+}
+.cds-browse-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Divider */
+.cds-divider {
+    border: none;
+    border-top: 1px solid #ece9e0;
+    margin: 28px 0;
+}
+
+/* Submit */
+.cds-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: #1e1e1e;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.9em;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+}
+.cds-submit:hover:not(:disabled) { opacity: 0.82; }
+.cds-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Error response */
+.cds-response {
+    margin-top: 24px;
+    background: #f5f4ed;
+    border-radius: 10px;
+    padding: 18px;
+    font-size: 0.82em;
+    color: #444;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    border: 1px solid #e4e3dc;
+}
+.cds-response.error { border-left: 3px solid #e07a5a; }
+
+/* Success result card */
+.cds-result {
+    margin-top: 24px;
+    border: 1px solid #d6f0d6;
+    border-left: 3px solid #7aad7a;
+    border-radius: 10px;
+    background: #f6fbf6;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.cds-result-op {
+    margin: 0;
+    font-size: 0.88em;
+    font-weight: 600;
+    color: #4a7a4a;
+    letter-spacing: -0.1px;
+}
+.cds-result-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.cds-result-label {
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #aaa;
+}
+.cds-result-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cds-result-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 0.83em;
+}
+.cds-result-idx {
+    font-size: 0.78em;
+    font-weight: 600;
+    color: #bbb;
+    min-width: 14px;
+    text-align: right;
+    flex-shrink: 0;
+}
+.cds-result-path {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #555;
+    word-break: break-all;
+}
+.cds-result-fname {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-weight: 600;
+    color: #1e1e1e;
+}
+.cds-result-desc {
+    color: #999;
+    font-size: 0.9em;
+}
+.cds-result-code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.83em;
+    color: #555;
+    word-break: break-all;
+}
+
+@media (max-width: 900px) {
+    .cds-container { padding: 32px 24px; }
+    .cds-mode-grid { grid-template-columns: 1fr; }
+}
