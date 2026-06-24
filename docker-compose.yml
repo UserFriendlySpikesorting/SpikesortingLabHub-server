@@ -18,8 +18,7 @@
 
 services:
   spikesorting-labhub:
-    build: .
-    image: spikesorting-labhub:latest
+    image: ikajalpatel21/spikesorting-labhub-latestimg:latest
     restart: unless-stopped
 
     command:
@@ -49,10 +48,12 @@ services:
       # Scan these directories for .bin / .prb data files
       DATA_DIRS: "/experiments,/experiments/probes"
 
+      # TrueNAS Database path
+      NAS_DB_PATH: /data/freenas-v1.db
     volumes:
       # trurnasdata — NAS database (read-only)
       - type: bind
-        source: /mnt/root_data_storage/users/sslh/trurnasdata
+        source: /mnt/root_data_storage/users/sslh/truenasdata
         target: /data
         read_only: true
 
