@@ -10,12 +10,28 @@ from job_queue.models import get_or_create_step_configs
 # ============================================================================
 
 
-def _coerce_band_floats(config: dict) -> dict:
-    """Ensures band values in highpass/bandpass filter configs are floats, not ints."""
-    for _, value in config.items():
-        if isinstance(value, dict) and "band" in value:
-            value["band"] = [float(v) for v in value["band"]]
-    return config
+_FLOAT_FIELDS = frozenset({
+    "window_ms", "bin_ms", "ms_before", "ms_after", "isi_threshold_ms", "radius_um",
+})
+
+
+def _coerce_floats(obj):
+    """
+    Recursively coerce known float fields from int to float throughout a config block.
+    Fixes precision loss that occurs when JSON is parsed and re-serialized by JavaScript
+    (e.g. 500.0 → 500), which would cause worker sanity checks to reject non-float values.
+    """
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "band" and isinstance(value, list):
+                obj[key] = [float(v) for v in value]
+            elif key in _FLOAT_FIELDS and isinstance(value, (int, float)):
+                obj[key] = float(value)
+            else:
+                obj[key] = _coerce_floats(value)
+    elif isinstance(obj, list):
+        return [_coerce_floats(item) for item in obj]
+    return obj
 
 
 def _resolve_step_config(step_data: dict, raw_data: dict) -> tuple:
@@ -45,7 +61,7 @@ def _resolve_step_config(step_data: dict, raw_data: dict) -> tuple:
         identifier = step_data["identifier"]
         config = raw_data.get(identifier) or {}  # External config block keyed by short identifier
 
-    return function, _coerce_band_floats(config)
+    return function, _coerce_floats(config)
 
 
 def _build_placeholder_map(steps_data: list, raw_data: dict) -> dict:

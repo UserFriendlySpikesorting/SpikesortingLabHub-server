@@ -175,6 +175,37 @@ class CreateAJobTests(TestCase):
             ])
         self.assertEqual(Job.objects.count(), count_before)
 
+    def test_raises_for_duplicate_step_identifiers(self):
+        """
+        Two steps with identical config blocks get the same SHA-256 identifier.
+        create_a_job must raise RuntimeError before hitting the DB unique constraint,
+        rather than letting the database produce a cryptic IntegrityError.
+
+        This can happen in practice when a pipeline has two steps (e.g. two phy_export
+        steps) that share exactly the same configuration block, including an empty one {}.
+        """
+        empty_hash = get_or_create_step_configs("phy_export", {})
+        duplicate_steps = [
+            {"function": "phy_export", "identifier": empty_hash, "depends": []},
+            {"function": "phy_export", "identifier": empty_hash, "depends": []},
+        ]
+        with self.assertRaises(RuntimeError) as ctx:
+            create_a_job({}, duplicate_steps)
+        self.assertIn("Duplicate", str(ctx.exception))
+
+    def test_duplicate_check_does_not_create_job(self):
+        """No Job row must be created when duplicate identifiers are rejected."""
+        empty_hash = get_or_create_step_configs("phy_export", {})
+        count_before = Job.objects.count()
+        try:
+            create_a_job({}, [
+                {"function": "phy_export", "identifier": empty_hash, "depends": []},
+                {"function": "phy_export", "identifier": empty_hash, "depends": []},
+            ])
+        except RuntimeError:
+            pass
+        self.assertEqual(Job.objects.count(), count_before)
+
 
 # ============================================================================
 # get_next_job_id()

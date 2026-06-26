@@ -127,6 +127,19 @@ def create_a_job(job_evn: dict, job_steps: list) -> "Job":
                 f"Create the config first before creating the job."
             )
 
+    # Detect duplicate identifiers before hitting the DB unique constraint.
+    # Two pipeline steps with identical config blocks share the same SHA-256 hash
+    # and therefore the same identifier, which violates unique_together=(job, identifier).
+    seen: set = set()
+    for step in job_steps:
+        identifier = step["identifier"]
+        if identifier in seen:
+            raise RuntimeError(
+                f"Duplicate step identifier '{identifier[:16]}...': two steps share the "
+                "same configuration block. Each step in a job must have a distinct config."
+            )
+        seen.add(identifier)
+
     # Create the Job and JobSteps atomically
     with transaction.atomic():  # All-or-nothing transaction
         job = Job.objects.create(

@@ -26,9 +26,10 @@ export default function AddNewPipeline({ onBack }) {
         // Read the file
         const reader = new FileReader();
         reader.onload = (event) => {
+            const rawText = event.target.result;
             try {
-                const content = JSON.parse(event.target.result);
-                setFileContent(content);
+                JSON.parse(rawText); // validate only — do not store parsed object
+                setFileContent(rawText); // preserve raw text to avoid JS float→int coercion
                 setFileValidationError('');
             } catch (err) {
                 setFileValidationError(`Invalid JSON: ${err.message}`);
@@ -61,14 +62,18 @@ export default function AddNewPipeline({ onBack }) {
                 throw new Error('No authentication token found. Please log in first.');
             }
 
-            // Send the entire JSON content to the backend
+            // Inject description into the raw JSON text without re-parsing numeric values,
+            // so float literals like 500.0 are sent to the server unchanged.
+            const descEntry = `"description": ${JSON.stringify(description.trim())}`;
+            const bodyText = fileContent.replace(/^\s*\{/, `{${descEntry}, `);
+
             const response = await fetch('/pipeline-factory/pipelines/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Token ${token}`,
                 },
-                body: JSON.stringify({ ...fileContent, description: description.trim() }),
+                body: bodyText,
             });
 
             if (!response.ok) {

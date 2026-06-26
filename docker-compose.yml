@@ -48,8 +48,8 @@ services:
       # Scan these directories for .bin / .prb data files
       DATA_DIRS: "/experiments,/experiments/probes"
 
-      # TrueNAS Database path
-      NAS_DB_PATH: /data/freenas-v1.db
+      # Path to the TrueNAS SQLite user database (used by FreeNASBackend for login)
+      NAS_DB_PATH: "/data/freenas-v1.db"
     volumes:
       # trurnasdata — NAS database (read-only)
       - type: bind
