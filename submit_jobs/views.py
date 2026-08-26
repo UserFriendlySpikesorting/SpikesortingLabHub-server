@@ -232,12 +232,11 @@ def combine_downsample_job(request):
     for _ in range(6):
         p = os.path.dirname(p)
     session_name = os.path.basename(p)
-    session_parent = os.path.dirname(p)
 
     if vd.get("output_folder"):
         out_dir = vd["output_folder"]
     else:
-        out_dir = os.path.join(session_parent, f"combined_{session_name}")
+        out_dir = os.path.join(p, f"combined_{session_name}")
 
     name = vd.get("output_name") or session_name
 
