@@ -157,8 +157,10 @@ class JobSerializer(serializers.ModelSerializer):
 
 class CombineDownsampleSerializer(serializers.Serializer):
     """
-    Validates a combine-and-downsample job request.
-    All input_files must be absolute server-side paths to .dat files.
+    Validates a combine-and/or-downsample job request.
+    All paths must be absolute server-side paths.
+    The caller must say explicitly which step(s) to run and where the
+    resulting file(s) should go — nothing here is inferred.
     """
 
     input_files = serializers.ListField(
@@ -166,14 +168,12 @@ class CombineDownsampleSerializer(serializers.Serializer):
         min_length=1,
     )
     num_channels = serializers.IntegerField(min_value=1)
-    downsample_factor = serializers.IntegerField(min_value=2, required=False, default=30)
-    mode = serializers.ChoiceField(
-        choices=['both', 'combine', 'downsample'],
-        required=False,
-        default='both',
-    )
-    output_name = serializers.CharField(required=False, allow_blank=True, default='')
-    output_folder = serializers.CharField(required=False, allow_blank=True, default='')
+    combine = serializers.BooleanField(required=False, default=False)
+    downsample = serializers.BooleanField(required=False, default=False)
+    downsample_factor = serializers.IntegerField(min_value=2, required=False)
+    output_folder = serializers.CharField(min_length=1)
+    output_name = serializers.CharField(min_length=1)
+    bit_volts_file = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_input_files(self, paths):
         for p in paths:
@@ -182,6 +182,17 @@ class CombineDownsampleSerializer(serializers.Serializer):
                     f"Each path must be absolute (start with /): {p!r}"
                 )
         return paths
+
+    def validate(self, data):
+        if not data.get('combine') and not data.get('downsample'):
+            raise serializers.ValidationError(
+                "At least one of `combine` or `downsample` must be true."
+            )
+        if data.get('downsample') and not data.get('downsample_factor'):
+            raise serializers.ValidationError(
+                "`downsample_factor` is required when `downsample` is true."
+            )
+        return data
 
 
 class JobCreationLogSerializer(serializers.ModelSerializer):
