@@ -173,7 +173,12 @@ class CombineDownsampleSerializer(serializers.Serializer):
     downsample_factor = serializers.IntegerField(min_value=2, required=False)
     output_folder = serializers.CharField(min_length=1)
     output_name = serializers.CharField(min_length=1)
-    bit_volts_file = serializers.CharField(required=False, allow_blank=True, default='')
+    # A caller-confirmed ADC-count-to-microvolt factor (see the `read-bit-volts/`
+    # endpoint, used by the frontend to look this up for the user to review).
+    # Never a file path — the worker must not read structure.oebin itself.
+    bit_volts = serializers.ListField(
+        child=serializers.FloatField(), required=False, allow_empty=False
+    )
 
     def validate_input_files(self, paths):
         for p in paths:
@@ -191,6 +196,12 @@ class CombineDownsampleSerializer(serializers.Serializer):
         if data.get('downsample') and not data.get('downsample_factor'):
             raise serializers.ValidationError(
                 "`downsample_factor` is required when `downsample` is true."
+            )
+        bit_volts = data.get('bit_volts')
+        if bit_volts and len(bit_volts) not in (1, data['num_channels']):
+            raise serializers.ValidationError(
+                "`bit_volts` must have either 1 value (applied to every channel) "
+                "or exactly `num_channels` values."
             )
         return data
 

@@ -1,4 +1,5 @@
 import os
+import json
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -157,6 +158,44 @@ def browse_data_files(request):
 
 
 # ============================================================================
+# Bit-Volts Lookup Endpoint
+# ============================================================================
+#
+# Reads an Open Ephys `structure.oebin` and reports its bit_volts values so
+# the frontend can show them to the user for explicit confirmation. Neither
+# the CLI nor the worker ever reads this file themselves — by the time a
+# combine/downsample job is submitted, the value has already been reviewed
+# and is passed through as an explicit number.
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def read_bit_volts(request):
+    """
+    GET: Read per-channel bit_volts from a structure.oebin file.
+    Query params: path (required, absolute path to a structure.oebin file)
+    """
+    data_dirs = [d.strip() for d in getattr(settings, "DATA_DIRS", []) if d.strip()]
+    requested = request.query_params.get("path", "").strip()
+
+    if not requested:
+        return Response({"error": "`path` is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if not _is_safe_path(requested, data_dirs):
+        return Response({"error": "Path is outside the allowed data directories."}, status=status.HTTP_403_FORBIDDEN)
+    if not os.path.isfile(requested):
+        return Response({"error": f"Not a file: {requested}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with open(requested) as fd:
+            meta = json.load(fd)
+        bit_volts = [ch["bit_volts"] for ch in meta["continuous"][0]["channels"]]
+    except (OSError, ValueError, KeyError, IndexError) as e:
+        return Response({"error": f"Cannot read bit_volts from {requested}: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({"path": requested, "bit_volts": bit_volts})
+
+
+# ============================================================================
 # Combine & Downsample Job Endpoint
 # ============================================================================
 
@@ -180,7 +219,7 @@ def combine_downsample_job(request):
           "downsample_factor": 30,                 // required if downsample == true
           "output_folder":     "/mnt/nas/out",
           "output_name":       "session01",
-          "bit_volts_file":    "/abs/path/structure.oebin"   // optional
+          "bit_volts":         [0.195]                       // optional; caller-confirmed
         }
     """
     serializer = CombineDownsampleSerializer(data=request.data)
@@ -225,8 +264,8 @@ def combine_downsample_job(request):
             "downsample factor":  vd["downsample_factor"],
             "output file":        ds_file,
         }
-        if vd.get("bit_volts_file"):
-            step_config["bit volts file"] = strip_nas_root(vd["bit_volts_file"])
+        if vd.get("bit_volts"):
+            step_config["bit volts"] = vd["bit_volts"]
         try:
             identifier = get_or_create_step_configs("downsample_to_lfp", step_config)
         except RuntimeError as e:
