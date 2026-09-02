@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 
 from pipeline_factory.models import Pipeline, PipelineStep
-from job_queue.models import get_or_create_step_configs, create_a_job, Job
+from job_queue.models import get_or_create_step_configs, create_a_job, Job, JobStep
 
 
 # ============================================================================
@@ -29,6 +29,25 @@ def create_test_pipeline():
         pipeline=pipeline,
         config_block_hash_id=sorting_hash,
         depends_on=[preprocessing_hash],
+    )
+    return pipeline
+
+
+def create_test_pipeline_with_upload():
+    """
+    Creates a 1-step pipeline containing only an `upload` step, using the
+    old-style frozen config (no `destination`, just `base path` + `suffix`) —
+    mirroring a real historical pipeline. Its config must be fully replaced
+    by the wizard's Destination step at job-creation time, never reused as-is.
+    """
+    pipeline = Pipeline.objects.create(description="Test pipeline with upload")
+    upload_hash = get_or_create_step_configs(
+        "upload", {"suffix": "0001", "base path": "$NAS$"}
+    )
+    PipelineStep.objects.create(
+        pipeline=pipeline,
+        config_block_hash_id=upload_hash,
+        depends_on=["_RECORDING_"],
     )
     return pipeline
 
@@ -114,6 +133,143 @@ class CreateSortingJobViewTests(APITestCase):
         self.client.credentials()
         response = self.client.post(self.url, self._payload(), format="json")
         self.assertIn(response.status_code, [401, 403])
+
+
+# ============================================================================
+# POST /submit-jobs/create-sorting-job/  — optional Downsample step
+# ============================================================================
+
+
+class SortingJobDownsampleTests(APITestCase):
+    """Tests for the wizard's optional Downsample step."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="researcher", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        self.url = "/submit-jobs/create-sorting-job/"
+        self.pipeline = create_test_pipeline()
+
+    def _payload(self, **overrides):
+        base = {
+            "recording": copy.deepcopy(RECORDING_PAYLOAD),
+            "pipeline_id": self.pipeline.pipeline_id,
+            "environment": "local",
+        }
+        base.update(overrides)
+        return base
+
+    def test_without_downsample_block_has_no_downsample_step(self):
+        data = self.client.post(self.url, self._payload(), format="json").json()
+        self.assertEqual(data["job_steps_count"], 3)  # recording + 2 pipeline steps
+
+    def test_with_downsample_block_adds_one_step(self):
+        payload = self._payload(downsample={
+            "downsample_factor": 30,
+            "output_folder": "/data/out",
+            "output_name": "session01",
+        })
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["job_steps_count"], 4)  # +1 downsample_to_lfp
+
+    def test_downsample_step_reuses_recording_binfile_and_channels(self):
+        payload = self._payload(downsample={
+            "downsample_factor": 30,
+            "output_folder": "/data/out",
+            "output_name": "session01",
+        })
+        self.client.post(self.url, payload, format="json")
+        step = JobStep.objects.get(function="downsample_to_lfp")
+        config = step.config_block_hash.config_block
+        self.assertEqual(config["input files"], ["/data/test.bin"])
+        self.assertEqual(config["number of channels"], 32)
+        self.assertEqual(config["downsample factor"], 30)
+        self.assertTrue(config["output file"].endswith("combined_ds30_session01.h5"))
+
+    def test_missing_downsample_factor_returns_400(self):
+        payload = self._payload(downsample={
+            "output_folder": "/data/out",
+            "output_name": "session01",
+        })
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_missing_output_folder_returns_400(self):
+        payload = self._payload(downsample={
+            "downsample_factor": 30,
+            "output_name": "session01",
+        })
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 400)
+
+
+# ============================================================================
+# POST /submit-jobs/create-sorting-job/  — Destination step / `upload` override
+# ============================================================================
+
+
+class SortingJobDestinationTests(APITestCase):
+    """Tests for the wizard's Destination step overriding a pipeline's `upload` step."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="researcher", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        self.url = "/submit-jobs/create-sorting-job/"
+        self.pipeline = create_test_pipeline_with_upload()
+
+    def _payload(self, **overrides):
+        base = {
+            "recording": copy.deepcopy(RECORDING_PAYLOAD),
+            "pipeline_id": self.pipeline.pipeline_id,
+            "environment": "local",
+        }
+        base.update(overrides)
+        return base
+
+    def test_missing_destination_returns_400(self):
+        response = self.client.post(self.url, self._payload(), format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("destination", response.json()["error"])
+
+    def test_with_destination_returns_201(self):
+        payload = self._payload(destination={"folder": "/data/results", "name": "session01"})
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 201)
+
+    def test_upload_config_overrides_stale_pipeline_default(self):
+        payload = self._payload(destination={"folder": "/data/results", "name": "session01"})
+        self.client.post(self.url, payload, format="json")
+        step = JobStep.objects.get(function="upload")
+        config = step.config_block_hash.config_block
+        # The old `base path`-only shape must be completely gone, not merged with it.
+        self.assertNotIn("base path", config)
+        self.assertEqual(config["destination"], "/data/results/session01")
+
+    def test_keep_base_directory_defaults_false(self):
+        payload = self._payload(destination={"folder": "/data/results", "name": "session01"})
+        self.client.post(self.url, payload, format="json")
+        step = JobStep.objects.get(function="upload")
+        self.assertFalse(step.config_block_hash.config_block["keep_base_directory"])
+
+    def test_keep_base_directory_can_be_set_true(self):
+        payload = self._payload(destination={
+            "folder": "/data/results", "name": "session01", "keep_base_directory": True,
+        })
+        self.client.post(self.url, payload, format="json")
+        step = JobStep.objects.get(function="upload")
+        self.assertTrue(step.config_block_hash.config_block["keep_base_directory"])
+
+    def test_pipeline_without_upload_step_does_not_require_destination(self):
+        other_pipeline = create_test_pipeline()  # no upload step
+        payload = {
+            "recording": copy.deepcopy(RECORDING_PAYLOAD),
+            "pipeline_id": other_pipeline.pipeline_id,
+            "environment": "local",
+        }
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 201)
 
 
 # ============================================================================

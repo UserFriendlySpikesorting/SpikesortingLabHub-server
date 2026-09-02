@@ -24,6 +24,31 @@ class RecordingConfigSerializer(serializers.Serializer):
     )
 
 
+class DestinationConfigSerializer(serializers.Serializer):
+    """
+    Validates the wizard's Destination step: where this job's results should
+    be stored. `folder` is picked with the server's folder browser; `name` is
+    the subfolder to create inside it. Both are required — nothing here is
+    inferred, the user always picks explicitly.
+    """
+
+    folder = serializers.CharField(required=True, min_length=1)
+    name = serializers.CharField(required=True, min_length=1)
+    keep_base_directory = serializers.BooleanField(required=False, default=False)
+
+
+class DownsampleConfigSerializer(serializers.Serializer):
+    """
+    Validates the wizard's optional Downsample step. `binfile` and
+    `num_channels` are NOT repeated here — they're reused from the Recording
+    step already collected earlier in the wizard.
+    """
+
+    downsample_factor = serializers.IntegerField(required=True, min_value=2)
+    output_folder = serializers.CharField(required=True, min_length=1)
+    output_name = serializers.CharField(required=True, min_length=1)
+
+
 class CreateSortingJobSerializer(serializers.Serializer):
     """
     Validates the React Sorting Job Wizard payload before job creation.
@@ -32,7 +57,12 @@ class CreateSortingJobSerializer(serializers.Serializer):
         {
           "recording": {"binfile": "...", "sampling_rate": 30000, ...},
           "pipeline_id": 1,
-          "environment": "local"
+          "environment": "local",
+          "downsample": {"downsample_factor": 30, "output_folder": "...",
+                          "output_name": "..."},              // optional
+          "destination": {"folder": "...", "name": "..."}   // required only if
+                                                              // the pipeline has
+                                                              // an upload step
         }
     """
 
@@ -41,6 +71,8 @@ class CreateSortingJobSerializer(serializers.Serializer):
     environment = serializers.ChoiceField(
         required=True, choices=["local", "gpu", "aws"]
     )
+    downsample = DownsampleConfigSerializer(required=False)
+    destination = DestinationConfigSerializer(required=False)
 
     def validate_pipeline_id(self, value):
         """Fail-fast: reject the request immediately if the pipeline does not exist."""

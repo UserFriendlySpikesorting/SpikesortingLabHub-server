@@ -16,12 +16,26 @@ export function WizardProvider({ children }) {
             badChannels: [],
             errors: [],
         },
-        // Step 2: Pipeline
+        // Step 2: Downsample (optional)
+        downsample: {
+            enabled: false,
+            downsampleFactor: 30,
+            outputName: '',
+            outputFolder: '',
+        },
+        // Step 3: Pipeline
         selectedPipeline: null,
         availablePipelines: [],
-        // Step 3: Environment
+        // Step 4: Environment
         jobEnvironment: {
             preset: 'default',
+        },
+        // Step 5: Destination (only required if the selected pipeline has an upload step)
+        // Results are always moved into the destination, never left duplicated
+        // in the working directory — no toggle for that here.
+        destination: {
+            folder: '',
+            name: '',
         },
     });
 
@@ -29,6 +43,20 @@ export function WizardProvider({ children }) {
         setWizardState(prev => ({
             ...prev,
             recording: { ...prev.recording, ...data },
+        }));
+    };
+
+    const updateDownsample = (data) => {
+        setWizardState(prev => ({
+            ...prev,
+            downsample: { ...prev.downsample, ...data },
+        }));
+    };
+
+    const updateDestination = (data) => {
+        setWizardState(prev => ({
+            ...prev,
+            destination: { ...prev.destination, ...data },
         }));
     };
 
@@ -66,10 +94,20 @@ export function WizardProvider({ children }) {
                 badChannels: [],
                 errors: [],
             },
+            downsample: {
+                enabled: false,
+                downsampleFactor: 30,
+                outputName: '',
+                outputFolder: '',
+            },
             selectedPipeline: null,
             availablePipelines: [],
             jobEnvironment: {
                 preset: 'default',
+            },
+            destination: {
+                folder: '',
+                name: '',
             },
         });
     };
@@ -77,6 +115,8 @@ export function WizardProvider({ children }) {
     const value = {
         wizardState,
         updateRecording,
+        updateDownsample,
+        updateDestination,
         updateSelectedPipeline,
         updateJobEnvironment,
         setAvailablePipelines,

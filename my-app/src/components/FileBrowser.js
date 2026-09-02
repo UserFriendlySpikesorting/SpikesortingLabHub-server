@@ -7,11 +7,18 @@ import '../styles/FileBrowser.css';
  *
  * Props:
  *   title       {string}   Modal heading, e.g. "Select .bin file"
- *   accept      {string[]} File extensions to show, e.g. [".bin"] or [".data"]
- *   onSelect    {fn}       Called with {name, path, ext, size_mb} when user picks a file
+ *   mode        {string}   'file' (default) — pick a file, same as always.
+ *                           'folder' — pick a directory instead: no files shown,
+ *                           a "Select this folder" button for the folder currently
+ *                           open, and a text field to name a new subfolder to
+ *                           create inside it. The subfolder is not created on the
+ *                           server here — the worker creates it when the job runs.
+ *   accept      {string[]} (mode="file" only) Extensions to show, e.g. [".bin"]
+ *   onSelect    {fn}       mode="file": called with {name, path, ext, size_mb}.
+ *                           mode="folder": called with {name, path}.
  *   onClose     {fn}       Called when modal is dismissed
  */
-export default function FileBrowser({ title, accept, onSelect, onClose }) {
+export default function FileBrowser({ title, mode = 'file', accept, onSelect, onClose }) {
     const { token } = useAuth();
     const [currentPath, setCurrentPath] = useState(null); // null = top-level roots
     const [parents, setParents] = useState([]);
@@ -20,6 +27,7 @@ export default function FileBrowser({ title, accept, onSelect, onClose }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [history, setHistory] = useState([]); // stack of previous paths for back button
+    const [newFolderName, setNewFolderName] = useState('');
 
     const fetchDir = useCallback((path) => {
         setLoading(true);
@@ -39,18 +47,23 @@ export default function FileBrowser({ title, accept, onSelect, onClose }) {
                 setCurrentPath(data.current_path);
                 setParents(data.parents || []);
                 setDirs(data.dirs || []);
-                // Filter files by accepted extensions
-                const filtered = (data.files || []).filter(
-                    f => !accept || accept.length === 0 || accept.includes(f.ext)
-                );
-                setFiles(filtered);
+                setNewFolderName('');
+                if (mode === 'folder') {
+                    setFiles([]); // folder picker never shows files
+                } else {
+                    // Filter files by accepted extensions
+                    const filtered = (data.files || []).filter(
+                        f => !accept || accept.length === 0 || accept.includes(f.ext)
+                    );
+                    setFiles(filtered);
+                }
                 setLoading(false);
             })
             .catch((err) => {
                 setError(err.message);
                 setLoading(false);
             });
-    }, [accept, token]);
+    }, [accept, mode, token]);
 
     // Load root on mount
     useEffect(() => {
@@ -149,6 +162,38 @@ export default function FileBrowser({ title, accept, onSelect, onClose }) {
                         </button>
                     ))}
                 </div>
+
+                {/* Folder picker footer — only once inside an actual folder, not at the top-level roots */}
+                {mode === 'folder' && currentPath && (
+                    <div className="fb-folder-footer">
+                        <button
+                            className="fb-select-folder-btn"
+                            onClick={() => { onSelect({ name: currentPath.split('/').pop(), path: currentPath }); onClose(); }}
+                        >
+                            Select this folder
+                        </button>
+                        <div className="fb-new-folder-row">
+                            <input
+                                className="fb-new-folder-input"
+                                type="text"
+                                placeholder="Or type a new subfolder name…"
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                            />
+                            <button
+                                className="fb-new-folder-btn"
+                                disabled={!newFolderName.trim()}
+                                onClick={() => {
+                                    const name = newFolderName.trim();
+                                    onSelect({ name, path: `${currentPath}/${name}` });
+                                    onClose();
+                                }}
+                            >
+                                Use this name
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

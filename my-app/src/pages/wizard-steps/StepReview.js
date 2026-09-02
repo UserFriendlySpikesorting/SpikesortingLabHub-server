@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useWizard } from '../../context/WizardContext';
+import { pipelineNeedsDestination } from './StepDestination';
 import '../../styles/WizardSteps.css';
 
 export default function StepReview({ onComplete }) {
@@ -7,7 +8,8 @@ export default function StepReview({ onComplete }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [successData, setSuccessData] = useState(null); // { jobId, username }
-    const { recording, selectedPipeline, jobEnvironment, availablePipelines } = wizardState;
+    const { recording, downsample, selectedPipeline, jobEnvironment, destination, availablePipelines } = wizardState;
+    const needsDestination = pipelineNeedsDestination(wizardState);
 
     const getUsername = () => {
         try { return JSON.parse(localStorage.getItem('user'))?.username || 'User'; }
@@ -47,6 +49,22 @@ export default function StepReview({ onComplete }) {
                 },
                 environment: jobEnvironment?.environment || "local"
             };
+
+            if (downsample.enabled) {
+                payload.downsample = {
+                    downsample_factor: parseInt(downsample.downsampleFactor),
+                    output_folder: downsample.outputFolder,
+                    output_name: downsample.outputName.trim(),
+                };
+            }
+
+            if (needsDestination) {
+                // Always moved into the destination — no copy/keep-original toggle.
+                payload.destination = {
+                    folder: destination.folder,
+                    name: destination.name.trim(),
+                };
+            }
 
             console.log('Submitting payload:', JSON.stringify(payload, null, 2));
 
@@ -154,6 +172,33 @@ export default function StepReview({ onComplete }) {
                     </div>
                 </div>
 
+                {/* Downsample Summary */}
+                <div className="review-section">
+                    <h3>Downsample</h3>
+                    <div className="review-items">
+                        {downsample.enabled ? (
+                            <>
+                                <div className="review-item">
+                                    <span className="label">Downsample Factor:</span>
+                                    <span className="value">{downsample.downsampleFactor}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Output Name:</span>
+                                    <span className="value">{downsample.outputName}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Output Folder:</span>
+                                    <span className="value">{downsample.outputFolder}</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="review-item">
+                                <span className="value">Not enabled</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Pipeline Summary */}
                 <div className="review-section">
                     <h3>Pipeline</h3>
@@ -214,6 +259,23 @@ export default function StepReview({ onComplete }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Destination Summary */}
+                {needsDestination && (
+                    <div className="review-section">
+                        <h3>Destination</h3>
+                        <div className="review-items">
+                            <div className="review-item">
+                                <span className="label">Base Folder:</span>
+                                <span className="value">{destination.folder}</span>
+                            </div>
+                            <div className="review-item">
+                                <span className="label">Destination Name:</span>
+                                <span className="value">{destination.name}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {error && (

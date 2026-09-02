@@ -53,6 +53,42 @@ def create_sorting_job_logic(validated_data: dict) -> Response:
     recording_identifier = get_or_create_step_configs("recording", recording)
     job_steps = build_job_steps_from_pipeline(pipeline_id, recording_identifier)
     job_steps = resolve_placeholder_dependencies(job_steps, recording_identifier)
+
+    # Optional Downsample step — reuses this same recording's `binfile` and
+    # `number of channels`, not asked again. Fully independent: nothing else
+    # in the pipeline consumes its output, so it just gets appended.
+    downsample = validated_data.get("downsample")
+    if downsample:
+        fname = f"combined_ds{downsample['downsample_factor']}_{downsample['output_name']}.h5"
+        downsample_config = {
+            "input files":        [recording["binfile"]],
+            "number of channels": recording["number of channels"],
+            "downsample factor":  downsample["downsample_factor"],
+            "output file": strip_nas_root(os.path.join(downsample["output_folder"], fname)),
+        }
+        downsample_identifier = get_or_create_step_configs("downsample_to_lfp", downsample_config)
+        job_steps.append({"function": "downsample_to_lfp", "identifier": downsample_identifier, "depends": []})
+
+    # If this pipeline has an `upload` step, its destination is always chosen
+    # fresh here by the user — never reused from whatever was stored when the
+    # pipeline was created.
+    destination = validated_data.get("destination")
+    for job_step in job_steps:
+        if job_step["function"] != "upload":
+            continue
+        if destination is None:
+            return Response(
+                {"error": "This pipeline includes an upload step — `destination` is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        upload_config = {
+            "destination": strip_nas_root(
+                os.path.join(destination["folder"], destination["name"])
+            ),
+            "keep_base_directory": destination["keep_base_directory"],
+        }
+        job_step["identifier"] = get_or_create_step_configs("upload", upload_config)
+
     job_env_config = build_job_env_config(environment)
 
     try:
