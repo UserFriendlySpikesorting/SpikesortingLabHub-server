@@ -31,12 +31,16 @@ RUN apt-get install -y --no-install-recommends \
 
 # ------------------------------------------------------------
 # 2. Download repository (docker branch) and unpack
+#    TEMPORARY: pointed at combine-downsample-cli instead of
+#    developing_branch so the combine/downsample feature is testable
+#    on the rig before it's merged. Revert to developing_branch once
+#    combine-downsample-cli is merged upstream.
 # ------------------------------------------------------------
 WORKDIR /app
-RUN wget -q https://github.com/UserFriendlySpikesorting/SpikesortingLabHub-server/archive/refs/heads/developing_branch.zip \
-    && unzip -q developing_branch.zip \
-    && mv SpikesortingLabHub-server-developing_branch/* . \
-    && rm -rf developing_branch.zip SpikesortingLabHub-server-developing_branch
+RUN wget -q https://github.com/UserFriendlySpikesorting/SpikesortingLabHub-server/archive/refs/heads/combine-downsample-cli.zip \
+    && unzip -q combine-downsample-cli.zip \
+    && mv SpikesortingLabHub-server-combine-downsample-cli/* . \
+    && rm -rf combine-downsample-cli.zip SpikesortingLabHub-server-combine-downsample-cli
 
 # ------------------------------------------------------------
 # 3. Set up Python virtual environment and install requirements
