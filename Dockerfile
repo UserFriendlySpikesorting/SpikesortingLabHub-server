@@ -12,8 +12,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # ------------------------------------------------------------
 # 1. System packages
 # ------------------------------------------------------------
-RUN apt-get update && apt-get upgrade -y --no-install-recommends
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
         python3 \
         python3-venv \
         python3-pip \
