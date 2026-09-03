@@ -107,7 +107,10 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div
+                {/* Combine & Downsample card hidden for now — standalone page and route
+                    (CombineAndDownsample.js, activeSection 'combineDs' below) are untouched,
+                    just not linked from the dashboard. Uncomment to bring it back. */}
+                {/* <div
                     className="action-card combine-ds"
                     onClick={() => setActiveSection('combineDs')}
                 >
@@ -126,7 +129,7 @@ export default function Dashboard() {
                         <span className="card-tag">Downsample</span>
                         <span className="card-tag">.mat</span>
                     </div>
-                </div>
+                </div> */}
             </div>
 
             {/* Your Workspace */}
