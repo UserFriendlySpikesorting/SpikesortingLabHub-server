@@ -17,6 +17,7 @@ RUN apt-get update && apt-get upgrade -y --no-install-recommends \
         python3 \
         python3-venv \
         python3-pip \
+        python3-dev \
         build-essential \
         libpq-dev \
         openssl \

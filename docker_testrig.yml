@@ -1,0 +1,37 @@
+services:
+  spikesorting-labhub:
+    command:
+      - gunicorn
+      - '-c'
+      - gunicorn.conf.py
+      - '--certfile=/app/secrets/cert.crt'
+      - '--keyfile=/app/secrets/cert.key'
+      - '-b'
+      - 0.0.0.0:9443
+      - labhub.wsgi:application
+    environment:
+      DATABASE_PATH: /django_db/db.sqlite3
+      DATA_DIRS: /experiments,/experiments/probes
+      DJANGO_DEBUG: 'False'
+      DJANGO_SECRET_KEY: 1234567890
+      NAS_DB_PATH: /data/freenas-v1.db
+      NAS_ROOT: /data
+    image: ikajalpatel21/spikesorting-labhub-latestimg:latest
+    ports:
+      - '9443:9443'
+    restart: unless-stopped
+    volumes:
+      - read_only: True
+        source: /mnt/root_data_storage/user_home/sslh/trurnasdata
+        target: /data
+        type: bind
+      - source: /mnt/root_data_storage/user_home/sslh/persistentdata
+        target: /django_db
+        type: bind
+      - read_only: True
+        source: /mnt/root_data_storage/experiments
+        target: /experiments
+        type: bind
+      - source: /mnt/root_data_storage/user_home/sslh/secrets
+        target: /app/secrets
+        type: bind

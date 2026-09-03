@@ -16,14 +16,14 @@
 
 set -euo pipefail
 
-LOG="/var/log/sslh_init.log"
+LOG="/mnt/root_data_storage/users/sslh/sslh_init.log"
 exec >> "$LOG" 2>&1
 
 echo "=== $(date) SpikesortingLabHub pre-init starting ==="
 
 # ── Required bind-mount directories ───────────────────────────
 REQUIRED_DIRS=(
-    "/mnt/root_data_storage/users/sslh/trurnasdata"
+    "/mnt/root_data_storage/users/sslh/truenasdata"
     "/mnt/root_data_storage/users/sslh/persistentdata"
     "/mnt/root_data_storage/users/sslh/secrets"
     "/mnt/root_data_storage/users/sslh/experiments"
@@ -35,6 +35,6 @@ for DIR in "${REQUIRED_DIRS[@]}"; do
     fi
     echo "OK: $DIR"
 done
-mount -o bind,ro /data /mnt/root_data_storage/users/sslh/trurnasdata
+mount -o bind,ro /data /mnt/root_data_storage/users/sslh/truenasdata
 mount -o bind,ro /mnt/root_data_storage/experiments /mnt/root_data_storage/users/sslh/experiments
 echo "=== $(date) All directories present — Docker may start ==="
