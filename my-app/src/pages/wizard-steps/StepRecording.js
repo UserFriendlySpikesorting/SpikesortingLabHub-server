@@ -3,6 +3,51 @@ import { useWizard } from '../../context/WizardContext';
 import FileBrowser from '../../components/FileBrowser';
 import '../../styles/WizardSteps.css';
 
+// Parse a range/list expression like "2-18, 21, 24-26" into a sorted list of
+// unique integers, keeping only values within [0, maxChannel].
+function parseChannelRange(expr, maxChannel) {
+    const result = new Set();
+    for (const rawPart of String(expr).split(',')) {
+        const part = rawPart.trim();
+        if (!part) continue;
+        const m = part.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (m) {
+            let [a, b] = [parseInt(m[1], 10), parseInt(m[2], 10)];
+            if (a > b) [a, b] = [b, a];
+            for (let i = a; i <= b; i++) result.add(i);
+        } else if (/^\d+$/.test(part)) {
+            result.add(parseInt(part, 10));
+        }
+    }
+    return [...result].filter(c => c >= 0 && c <= maxChannel).sort((x, y) => x - y);
+}
+
+// Bulk range/select-all/clear controls for a channel checkbox grid.
+function ChannelRangeControls({ maxChannel, onApply, onClear, onSelectAll }) {
+    const [expr, setExpr] = useState('');
+    const apply = (add) => {
+        const parsed = parseChannelRange(expr, maxChannel);
+        if (parsed.length) onApply(parsed, add);
+        setExpr('');
+    };
+    return (
+        <div className="channels-range-controls">
+            <input
+                type="text"
+                className="form-input channels-range-input"
+                placeholder="e.g. 2-18, 21, 24-26"
+                value={expr}
+                onChange={(e) => setExpr(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(true); } }}
+            />
+            <button type="button" className="channels-range-btn" onClick={() => apply(true)}>Add range</button>
+            <button type="button" className="channels-range-btn" onClick={() => apply(false)}>Remove range</button>
+            <button type="button" className="channels-range-btn" onClick={onSelectAll}>Select all</button>
+            <button type="button" className="channels-range-btn" onClick={onClear}>Clear</button>
+        </div>
+    );
+}
+
 // Convert absolute server path to $NAS$-relative path.
 // Everything under the experiments/ folder is on the NAS mount.
 function toNasPath(path) {
@@ -36,6 +81,33 @@ export default function StepRecording() {
             badChannels: recording.badChannels.filter(c => !updated.includes(c)),
         });
     };
+
+    const maxChannel = Math.max(0, recording.numChannels) - 1;
+
+    // Add or remove a batch of channels from the "remove channels" list.
+    const applyRemoveChannels = (channels, add) => {
+        const set = new Set(recording.removeChannels);
+        channels.forEach(c => add ? set.add(c) : set.delete(c));
+        const updated = [...set].sort((a, b) => a - b);
+        updateRecording({
+            removeChannels: updated,
+            badChannels: recording.badChannels.filter(c => !updated.includes(c)),
+        });
+    };
+
+    // Add or remove a batch of channels from the "bad channels" list
+    // (channels already marked for removal can't be bad channels).
+    const applyBadChannels = (channels, add) => {
+        const set = new Set(recording.badChannels);
+        channels.forEach(c => {
+            if (add && !recording.removeChannels.includes(c)) set.add(c);
+            if (!add) set.delete(c);
+        });
+        updateRecording({ badChannels: [...set].sort((a, b) => a - b) });
+    };
+
+    const allChannels = () =>
+        Array.from({ length: Math.max(0, recording.numChannels) }, (_, i) => i);
 
     const handleBadChannelToggle = (channel) => {
         const updated = recording.badChannels.includes(channel)
@@ -163,6 +235,12 @@ export default function StepRecording() {
                 {/* Remove Channels */}
                 <div className="channels-section">
                     <label className="channels-label">Remove Channels</label>
+                    <ChannelRangeControls
+                        maxChannel={maxChannel}
+                        onApply={applyRemoveChannels}
+                        onSelectAll={() => applyRemoveChannels(allChannels(), true)}
+                        onClear={() => updateRecording({ removeChannels: [] })}
+                    />
                     <div className="channels-grid">
                         {Array.from({ length: Math.max(0, recording.numChannels) }).map((_, idx) => (
                             <label key={`remove-${idx}`} className="checkbox-label">
@@ -186,6 +264,12 @@ export default function StepRecording() {
                 {/* Bad Channels */}
                 <div className="channels-section">
                     <label className="channels-label">Bad Channels</label>
+                    <ChannelRangeControls
+                        maxChannel={maxChannel}
+                        onApply={applyBadChannels}
+                        onSelectAll={() => applyBadChannels(allChannels(), true)}
+                        onClear={() => updateRecording({ badChannels: [] })}
+                    />
                     <div className="channels-grid">
                         {Array.from({ length: Math.max(0, recording.numChannels) })
                             .map((_, idx) => idx)

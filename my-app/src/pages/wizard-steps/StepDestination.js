@@ -23,8 +23,11 @@ export function pipelineNeedsDestination(wizardState) {
 //
 // A combined .dat file (from the Combine & Downsample step) doesn't live
 // under experimentN/recordingN at all — it sits in a "combined_<session>"
-// folder instead. When neither pattern is found, fall back to detecting
-// "combined" in the path as the alternative identifier.
+// folder instead. When neither pattern is found, fall back to the full
+// "combined_..." segment itself (the folder, not just the word), e.g.
+// ".../combined_2025-05-21_15-12-54/combined_raw_downsampled_LFP.dat"
+// -> "combined_2025-05-21_15-12-54". `.find` naturally picks the folder
+// over the filename since it appears earlier in the split path.
 function extractExperimentRecording(binFile) {
     if (!binFile) return '';
     const parts = binFile.split('/');
@@ -33,8 +36,10 @@ function extractExperimentRecording(binFile) {
     if (experiment || recording) {
         return [experiment, recording].filter(Boolean).join('_');
     }
-    const hasCombined = parts.some(p => /combined/i.test(p));
-    return hasCombined ? 'combined' : '';
+    const combinedSegment = parts.find(p => /combined/i.test(p));
+    // Strip a file extension in case the only "combined" match is a filename
+    // rather than a folder (no combined_<session> folder in the path at all).
+    return combinedSegment ? combinedSegment.replace(/\.[^/.]+$/, '') : '';
 }
 
 // Suggests "experiment1_recording2_pipeline<id>" — visible and editable,

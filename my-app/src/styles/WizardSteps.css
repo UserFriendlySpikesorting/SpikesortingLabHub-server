@@ -107,6 +107,35 @@
     font-size: 0.95em;
 }
 
+.channels-range-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.channels-range-input {
+    flex: 1 1 200px;
+    min-width: 160px;
+}
+
+.channels-range-btn {
+    padding: 6px 12px;
+    border: 1px solid #8fa06e;
+    background: #fff;
+    color: #5a6b3e;
+    border-radius: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.channels-range-btn:hover {
+    background: #8fa06e;
+    color: #fff;
+}
+
 .channels-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
