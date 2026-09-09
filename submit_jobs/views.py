@@ -54,17 +54,24 @@ def create_sorting_job_logic(validated_data: dict) -> Response:
     job_steps = build_job_steps_from_pipeline(pipeline_id, recording_identifier)
     job_steps = resolve_placeholder_dependencies(job_steps, recording_identifier)
 
-    # Optional Downsample step — reuses this same recording's `binfile` and
-    # `number of channels`, not asked again. Fully independent: nothing else
-    # in the pipeline consumes its output, so it just gets appended.
+    # Optional Downsample step — reuses this same recording's `binfile`,
+    # `number of channels`, and `gain_to_uV` (== bit_volts: both mean "how many
+    # µV is one ADC count", just named differently between spikeinterface and
+    # Open Ephys). Not asked again — already explicit and confirmed in Step 1.
+    # Fully independent: nothing else in the pipeline consumes its output, so
+    # it just gets appended.
     downsample = validated_data.get("downsample")
     if downsample:
-        fname = f"combined_ds{downsample['downsample_factor']}_{downsample['output_name']}.h5"
+        # The output file is exactly what the user typed as `output_name`, plus
+        # the extension — no prefix added, so what's shown in Step 2 is what
+        # actually lands on disk.
+        fname = f"{downsample['output_name']}.h5"
         downsample_config = {
             "input files":        [recording["binfile"]],
             "number of channels": recording["number of channels"],
             "downsample factor":  downsample["downsample_factor"],
             "output file": strip_nas_root(os.path.join(downsample["output_folder"], fname)),
+            "bit volts": recording["gain_to_uV"],
         }
         downsample_identifier = get_or_create_step_configs("downsample_to_lfp", downsample_config)
         job_steps.append({"function": "downsample_to_lfp", "identifier": downsample_identifier, "depends": []})

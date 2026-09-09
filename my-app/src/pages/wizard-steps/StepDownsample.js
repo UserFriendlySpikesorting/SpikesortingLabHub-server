@@ -72,6 +72,10 @@ export default function StepDownsample() {
                         <label>Number of channels (from Step 1):</label>
                         <div className="fb-field-path">{recording.numChannels}</div>
                     </div>
+                    <div className="form-group recording-form-group">
+                        <label>Bit volts / µV per count (from Step 1's Gain to µV):</label>
+                        <div className="fb-field-path">{recording.gainToMicroVolts}</div>
+                    </div>
 
                     {/* Downsample factor */}
                     <div className="form-group recording-form-group">

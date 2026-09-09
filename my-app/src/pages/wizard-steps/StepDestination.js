@@ -19,20 +19,32 @@ export function pipelineNeedsDestination(wizardState) {
 
 // Pulls "experimentN"/"recordingN" out of the Open Ephys path, e.g.
 // ".../experiment1/recording2/Acquisition_Board-100.Rhythm Data/continuous.dat"
-// -> "experiment1_recording2"
+// -> "experiment1_recording2".
+//
+// A combined .dat file (from the Combine & Downsample step) doesn't live
+// under experimentN/recordingN at all — it sits in a "combined_<session>"
+// folder instead. When neither pattern is found, fall back to detecting
+// "combined" in the path as the alternative identifier.
 function extractExperimentRecording(binFile) {
     if (!binFile) return '';
     const parts = binFile.split('/');
     const experiment = parts.find(p => /^experiment\d+$/i.test(p));
     const recording = parts.find(p => /^recording\d+$/i.test(p));
-    return [experiment, recording].filter(Boolean).join('_');
+    if (experiment || recording) {
+        return [experiment, recording].filter(Boolean).join('_');
+    }
+    const hasCombined = parts.some(p => /combined/i.test(p));
+    return hasCombined ? 'combined' : '';
 }
 
-// Suggests "<pipeline_id>_experiment1_recording2" — visible and editable,
+// Suggests "experiment1_recording2_pipeline<id>" — visible and editable,
 // never submitted without the user seeing it.
 function suggestDestinationName(wizardState) {
     const { selectedPipeline, recording } = wizardState;
-    return [selectedPipeline, extractExperimentRecording(recording.binFile)]
+    return [
+        extractExperimentRecording(recording.binFile),
+        selectedPipeline ? `pipeline${selectedPipeline}` : null,
+    ]
         .filter(Boolean)
         .join('_');
 }

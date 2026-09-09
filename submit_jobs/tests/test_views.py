@@ -185,7 +185,18 @@ class SortingJobDownsampleTests(APITestCase):
         self.assertEqual(config["input files"], ["/data/test.bin"])
         self.assertEqual(config["number of channels"], 32)
         self.assertEqual(config["downsample factor"], 30)
-        self.assertTrue(config["output file"].endswith("combined_ds30_session01.h5"))
+        self.assertTrue(config["output file"].endswith("session01.h5"))
+
+    def test_downsample_step_reuses_recording_gain_to_uV_as_bit_volts(self):
+        payload = self._payload(downsample={
+            "downsample_factor": 30,
+            "output_folder": "/data/out",
+            "output_name": "session01",
+        })
+        self.client.post(self.url, payload, format="json")
+        step = JobStep.objects.get(function="downsample_to_lfp")
+        config = step.config_block_hash.config_block
+        self.assertEqual(config["bit volts"], RECORDING_PAYLOAD["gain_to_uV"])
 
     def test_missing_downsample_factor_returns_400(self):
         payload = self._payload(downsample={
