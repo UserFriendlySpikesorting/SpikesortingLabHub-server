@@ -47,7 +47,7 @@ export default function StepReview({ onComplete }) {
                     remove_channels: recording.removeChannels.map(ch => parseInt(ch)),
                     bad_channels: recording.badChannels.map(ch => parseInt(ch)),
                 },
-                environment: jobEnvironment?.environment || "local"
+                environment: jobEnvironment?.environment
             };
 
             if (downsample.enabled) {
@@ -217,47 +217,61 @@ export default function StepReview({ onComplete }) {
                 {/* Environment Summary */}
                 <div className="review-section">
                     <h3>Job Environment</h3>
-                    <div className="review-items">
-                        <div className="review-item">
-                            <span className="label">Base Directory:</span>
-                            <span className="value">$LOCAL$/$JOB_ID$</span>
+                    {jobEnvironment?.config ? (
+                        <>
+                            <div className="review-items">
+                                <div className="review-item">
+                                    <span className="label">Environment:</span>
+                                    <span className="value">{jobEnvironment.environment}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Base Directory:</span>
+                                    <span className="value">{jobEnvironment.config['base directory']}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Number of Jobs:</span>
+                                    <span className="value">{jobEnvironment.config.job_kwargs.n_jobs}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Total Memory:</span>
+                                    <span className="value">{jobEnvironment.config.job_kwargs.total_memory}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Chunk Duration:</span>
+                                    <span className="value">{jobEnvironment.config.job_kwargs.chunk_duration}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Progress Bar:</span>
+                                    <span className="value">{jobEnvironment.config.job_kwargs.progress_bar ? 'Enabled' : 'Disabled'}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Log Level:</span>
+                                    <span className="value">{jobEnvironment.config.log_level}</span>
+                                </div>
+                            </div>
+                            <div className="review-items" style={{ marginTop: '1rem' }}>
+                                <h4 style={{ marginBottom: '0.5rem', fontSize: '0.95rem', fontWeight: '600' }}>Output Redirects</h4>
+                                <div className="review-item">
+                                    <span className="label">Log:</span>
+                                    <span className="value">{jobEnvironment.config.REDIRECT.log}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Out:</span>
+                                    <span className="value">{jobEnvironment.config.REDIRECT.out}</span>
+                                </div>
+                                <div className="review-item">
+                                    <span className="label">Error:</span>
+                                    <span className="value">{jobEnvironment.config.REDIRECT.err}</span>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="review-items">
+                            <div className="review-item">
+                                <span className="value">Not selected</span>
+                            </div>
                         </div>
-                        <div className="review-item">
-                            <span className="label">Number of Jobs:</span>
-                            <span className="value">40</span>
-                        </div>
-                        <div className="review-item">
-                            <span className="label">Total Memory:</span>
-                            <span className="value">128G</span>
-                        </div>
-                        <div className="review-item">
-                            <span className="label">Chunk Duration:</span>
-                            <span className="value">60s</span>
-                        </div>
-                        <div className="review-item">
-                            <span className="label">Progress Bar:</span>
-                            <span className="value">Enabled</span>
-                        </div>
-                        <div className="review-item">
-                            <span className="label">Log Level:</span>
-                            <span className="value">DEBUG</span>
-                        </div>
-                    </div>
-                    <div className="review-items" style={{ marginTop: '1rem' }}>
-                        <h4 style={{ marginBottom: '0.5rem', fontSize: '0.95rem', fontWeight: '600' }}>Output Redirects</h4>
-                        <div className="review-item">
-                            <span className="label">Log:</span>
-                            <span className="value">$NAS$/SORTING_LOGS/$JOB_ID$/run.log</span>
-                        </div>
-                        <div className="review-item">
-                            <span className="label">Out:</span>
-                            <span className="value">$NAS$/SORTING_LOGS/$JOB_ID$/run.out</span>
-                        </div>
-                        <div className="review-item">
-                            <span className="label">Error:</span>
-                            <span className="value">$NAS$/SORTING_LOGS/$JOB_ID$/run.err</span>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Destination Summary */}

@@ -88,7 +88,7 @@ export default function CreateSortingJobWizard({ onBack }) {
                 return true;
             case 4:
                 // Validate environment
-                if (!wizardState.jobEnvironment.preset) {
+                if (!wizardState.jobEnvironment.environment) {
                     alert('Please select a job environment');
                     return false;
                 }

@@ -28,8 +28,10 @@ export function WizardProvider({ children }) {
         availablePipelines: [],
         // Step 4: Environment
         jobEnvironment: {
-            preset: 'default',
+            environment: null,
+            config: null,
         },
+        availableEnvironments: [],
         // Step 5: Destination (only required if the selected pipeline has an upload step)
         // Results are always moved into the destination, never left duplicated
         // in the working directory — no toggle for that here.
@@ -67,10 +69,10 @@ export function WizardProvider({ children }) {
         }));
     };
 
-    const updateJobEnvironment = (preset) => {
+    const updateJobEnvironment = (environment, config) => {
         setWizardState(prev => ({
             ...prev,
-            jobEnvironment: { preset },
+            jobEnvironment: { environment, config },
         }));
     };
 
@@ -78,6 +80,13 @@ export function WizardProvider({ children }) {
         setWizardState(prev => ({
             ...prev,
             availablePipelines: pipelines,
+        }));
+    };
+
+    const setAvailableEnvironments = (environments) => {
+        setWizardState(prev => ({
+            ...prev,
+            availableEnvironments: environments,
         }));
     };
 
@@ -103,8 +112,10 @@ export function WizardProvider({ children }) {
             selectedPipeline: null,
             availablePipelines: [],
             jobEnvironment: {
-                preset: 'default',
+                environment: null,
+                config: null,
             },
+            availableEnvironments: [],
             destination: {
                 folder: '',
                 name: '',
@@ -120,6 +131,7 @@ export function WizardProvider({ children }) {
         updateSelectedPipeline,
         updateJobEnvironment,
         setAvailablePipelines,
+        setAvailableEnvironments,
         resetWizard,
     };
 

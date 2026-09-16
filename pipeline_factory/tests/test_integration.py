@@ -43,7 +43,7 @@ class PipelineToJobIntegrationTests(APITestCase):
                     "offset": 0.0,
                 },
                 "pipeline_id": pipeline_id,
-                "environment": "local",
+                "environment": "default",
             },
             format="json",
         )

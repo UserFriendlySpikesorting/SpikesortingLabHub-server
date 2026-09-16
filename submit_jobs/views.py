@@ -11,6 +11,7 @@ from .models import (
     build_job_steps_from_pipeline,
     resolve_placeholder_dependencies,
     build_job_env_config,
+    JobEnvironmentDefault,
 )
 from .serializers import CreateSortingJobSerializer, CombineDownsampleSerializer
 
@@ -96,6 +97,12 @@ def create_sorting_job_logic(validated_data: dict) -> Response:
         }
         job_step["identifier"] = get_or_create_step_configs("upload", upload_config)
 
+    if not JobEnvironmentDefault.objects.filter(environment=environment).exists():
+        return Response(
+            {"error": f"Unknown job environment: {environment}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     job_env_config = build_job_env_config(environment)
 
     try:
@@ -135,6 +142,25 @@ def create_sorting_job(request):
             {"error": f"Job creation failed: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_job_environments(request):
+    """
+    GET: Lists every JobEnvironmentDefault row, each paired with the exact
+    config build_job_env_config() would produce for it — so the wizard's
+    preview is guaranteed to match what a real job submission would use.
+    'default' is always sorted first; the rest follow alphabetically.
+    """
+    names = JobEnvironmentDefault.objects.values_list("environment", flat=True)
+    sorted_names = sorted(names, key=lambda name: (name != "default", name))
+    return Response(
+        [
+            {"environment": name, "config": build_job_env_config(name)}
+            for name in sorted_names
+        ]
+    )
 
 
 # ============================================================================

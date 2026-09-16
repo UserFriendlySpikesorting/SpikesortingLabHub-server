@@ -107,11 +107,12 @@ def resolve_placeholder_dependencies(
 
 # Fallback values used when no JobEnvironmentDefault row exists for the
 # requested environment (e.g. fresh database, row deleted by mistake) — keeps
-# job submission working even if the defaults table is empty.
+# job submission working even if the defaults table is empty. Mirrors the
+# 'default' row's values so behavior stays consistent either way.
 _HARDCODED_JOB_ENV_DEFAULTS = {
     "base_directory": "$LOCAL$/$JOB_ID$",
     "n_jobs": 40,
-    "total_memory": "128G",
+    "total_memory": "30G",
     "chunk_duration": "60s",
     "progress_bar": True,
     "log_level": "DEBUG",
@@ -130,7 +131,10 @@ def build_job_env_config(environment: str) -> dict:
     defaults if no row exists for the environment.
 
     Args:
-        environment: Target execution environment (e.g., 'local', 'gpu', 'aws')
+        environment: Target execution environment. 'default' is the standard
+            environment for this rig; additional named environments can be
+            hand-added in Django admin for one-off tuning (e.g. a recording
+            that needs different memory/worker limits).
 
     Returns:
         dict: Job environment config with base directory, job_kwargs, log_level, and REDIRECT
@@ -181,7 +185,7 @@ class JobEnvironmentDefault(models.Model):
 
     environment = models.CharField(
         max_length=50, unique=True
-    )  # e.g. 'local', 'gpu', 'aws' — matches the environment passed to build_job_env_config
+    )  # 'default' is the standard environment; others are hand-added for one-off tuning
     base_directory = models.CharField(max_length=255, default="$LOCAL$/$JOB_ID$")
     n_jobs = models.IntegerField(default=40)
     total_memory = models.CharField(

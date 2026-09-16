@@ -123,26 +123,25 @@ class BuildJobEnvConfigTests(TestCase):
     """Tests for build_job_env_config() — environment dict structure."""
 
     def test_returns_dict_with_all_required_keys(self):
-        config = build_job_env_config("local")
+        config = build_job_env_config("default")
         for key in ("base directory", "job_kwargs", "log_level", "REDIRECT"):
             self.assertIn(key, config)
 
     def test_falls_back_to_hardcoded_defaults_when_no_row_exists(self):
         config = build_job_env_config("nonexistent_env")
         self.assertEqual(config["job_kwargs"]["n_jobs"], 40)
-        self.assertEqual(config["job_kwargs"]["total_memory"], "128G")
+        self.assertEqual(config["job_kwargs"]["total_memory"], "30G")
 
-    def test_valid_for_all_supported_environments(self):
-        for env in ("local", "gpu", "aws"):
-            config = build_job_env_config(env)
-            self.assertIn("job_kwargs", config)
+    def test_default_environment_seeded_by_migration(self):
+        config = build_job_env_config("default")
+        self.assertEqual(config["job_kwargs"]["total_memory"], "30G")
 
     def test_reads_tuned_values_from_database(self):
         """A tuned row in the DB should be reflected without any code change."""
-        JobEnvironmentDefault.objects.filter(environment="local").update(
+        JobEnvironmentDefault.objects.filter(environment="default").update(
             n_jobs=8, total_memory="32G"
         )
-        config = build_job_env_config("local")
+        config = build_job_env_config("default")
         self.assertEqual(config["job_kwargs"]["n_jobs"], 8)
         self.assertEqual(config["job_kwargs"]["total_memory"], "32G")
 
@@ -169,6 +168,23 @@ class BuildJobEnvConfigTests(TestCase):
         self.assertEqual(config["REDIRECT"]["log"], "$NAS$/custom/run.log")
         self.assertEqual(config["REDIRECT"]["out"], "$NAS$/custom/run.out")
         self.assertEqual(config["REDIRECT"]["err"], "$NAS$/custom/run.err")
+
+
+# ============================================================================
+# JobEnvironmentDefault — post-migration state
+# ============================================================================
+
+
+class JobEnvironmentDefaultMigrationStateTests(TestCase):
+    """Confirms the 0005 data migration collapsed local/gpu/aws to 'default'."""
+
+    def test_only_default_environment_exists(self):
+        names = set(JobEnvironmentDefault.objects.values_list("environment", flat=True))
+        self.assertEqual(names, {"default"})
+
+    def test_default_total_memory_is_30G(self):
+        default = JobEnvironmentDefault.objects.get(environment="default")
+        self.assertEqual(default.total_memory, "30G")
 
 
 # ============================================================================

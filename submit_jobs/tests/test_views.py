@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 
 from pipeline_factory.models import Pipeline, PipelineStep
 from job_queue.models import get_or_create_step_configs, create_a_job, Job, JobStep
+from submit_jobs.models import JobEnvironmentDefault, build_job_env_config
 
 
 # ============================================================================
@@ -82,7 +83,7 @@ class CreateSortingJobViewTests(APITestCase):
         base = {
             "recording": copy.deepcopy(RECORDING_PAYLOAD),
             "pipeline_id": self.pipeline.pipeline_id,
-            "environment": "local",
+            "environment": "default",
         }
         base.update(overrides)
         return base
@@ -116,6 +117,10 @@ class CreateSortingJobViewTests(APITestCase):
     def test_invalid_environment_returns_400(self):
         response = self.client.post(self.url, self._payload(environment="invalid"), format="json")
         self.assertEqual(response.status_code, 400)
+
+    def test_unknown_environment_error_names_the_environment(self):
+        response = self.client.post(self.url, self._payload(environment="invalid"), format="json")
+        self.assertIn("invalid", response.json()["error"])
 
     def test_missing_binfile_returns_400(self):
         payload = self._payload()
@@ -154,7 +159,7 @@ class SortingJobDownsampleTests(APITestCase):
         base = {
             "recording": copy.deepcopy(RECORDING_PAYLOAD),
             "pipeline_id": self.pipeline.pipeline_id,
-            "environment": "local",
+            "environment": "default",
         }
         base.update(overrides)
         return base
@@ -234,7 +239,7 @@ class SortingJobDestinationTests(APITestCase):
         base = {
             "recording": copy.deepcopy(RECORDING_PAYLOAD),
             "pipeline_id": self.pipeline.pipeline_id,
-            "environment": "local",
+            "environment": "default",
         }
         base.update(overrides)
         return base
@@ -277,7 +282,7 @@ class SortingJobDestinationTests(APITestCase):
         payload = {
             "recording": copy.deepcopy(RECORDING_PAYLOAD),
             "pipeline_id": other_pipeline.pipeline_id,
-            "environment": "local",
+            "environment": "default",
         }
         response = self.client.post(self.url, payload, format="json")
         self.assertEqual(response.status_code, 201)
@@ -389,3 +394,46 @@ class JobDetailViewTests(APITestCase):
     def test_returns_404_for_nonexistent_job(self):
         response = self.client.get("/job-queue/00000000-0000-0000-0000-000000000000/")
         self.assertEqual(response.status_code, 404)
+
+
+# ============================================================================
+# GET /submit-jobs/environments/
+# ============================================================================
+
+
+class ListJobEnvironmentsViewTests(APITestCase):
+    """Tests for the wizard's environment-picker endpoint."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="researcher", password="pass")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+        self.url = "/submit-jobs/environments/"
+
+    def test_returns_200(self):
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+
+    def test_default_is_present(self):
+        names = [entry["environment"] for entry in self.client.get(self.url).json()]
+        self.assertIn("default", names)
+
+    def test_default_is_sorted_first_even_when_other_names_precede_it_alphabetically(self):
+        JobEnvironmentDefault.objects.create(environment="aardvark")
+        names = [entry["environment"] for entry in self.client.get(self.url).json()]
+        self.assertEqual(names[0], "default")
+        self.assertIn("aardvark", names)
+
+    def test_other_environments_sorted_alphabetically_after_default(self):
+        JobEnvironmentDefault.objects.create(environment="zeta")
+        JobEnvironmentDefault.objects.create(environment="alpha")
+        names = [entry["environment"] for entry in self.client.get(self.url).json()]
+        self.assertEqual(names, ["default", "alpha", "zeta"])
+
+    def test_each_entry_config_matches_build_job_env_config(self):
+        data = self.client.get(self.url).json()
+        default_entry = next(e for e in data if e["environment"] == "default")
+        self.assertEqual(default_entry["config"], build_job_env_config("default"))
+
+    def test_requires_authentication(self):
+        self.client.credentials()
+        self.assertIn(self.client.get(self.url).status_code, [401, 403])

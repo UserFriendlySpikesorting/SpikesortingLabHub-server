@@ -44,7 +44,7 @@ class SortingJobEndToEndTests(APITestCase):
                     "offset_to_uV": 0.0,
                 },
                 "pipeline_id": pipeline_id,
-                "environment": "local",
+                "environment": "default",
             },
             format="json",
         ).json()

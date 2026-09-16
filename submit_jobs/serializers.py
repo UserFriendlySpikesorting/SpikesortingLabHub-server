@@ -68,9 +68,10 @@ class CreateSortingJobSerializer(serializers.Serializer):
 
     recording = RecordingConfigSerializer(required=True)
     pipeline_id = serializers.IntegerField(required=True, min_value=1)
-    environment = serializers.ChoiceField(
-        required=True, choices=["local", "gpu", "aws"]
-    )
+    # Environments are stored in JobEnvironmentDefault and can be added/removed
+    # from Django admin, so this can't be a fixed ChoiceField — the view checks
+    # existence against the DB before use.
+    environment = serializers.CharField(required=True)
     downsample = DownsampleConfigSerializer(required=False)
     destination = DestinationConfigSerializer(required=False)
 
