@@ -105,31 +105,109 @@ def resolve_placeholder_dependencies(
     return job_steps
 
 
+# Fallback values used when no JobEnvironmentDefault row exists for the
+# requested environment (e.g. fresh database, row deleted by mistake) — keeps
+# job submission working even if the defaults table is empty.
+_HARDCODED_JOB_ENV_DEFAULTS = {
+    "base_directory": "$LOCAL$/$JOB_ID$",
+    "n_jobs": 40,
+    "total_memory": "128G",
+    "chunk_duration": "60s",
+    "progress_bar": True,
+    "log_level": "DEBUG",
+    "redirect_log": "$NAS$/SORTING_LOGS/$JOB_ID$/run.log",
+    "redirect_out": "$NAS$/SORTING_LOGS/$JOB_ID$/run.out",
+    "redirect_err": "$NAS$/SORTING_LOGS/$JOB_ID$/run.err",
+}
+
+
 def build_job_env_config(environment: str) -> dict:
     """
     Constructs the standard job environment configuration dictionary passed to create_a_job.
+
+    Values are loaded from the JobEnvironmentDefault table for the given environment
+    so they can be tuned without a code change/deploy. Falls back to hardcoded
+    defaults if no row exists for the environment.
 
     Args:
         environment: Target execution environment (e.g., 'local', 'gpu', 'aws')
 
     Returns:
-        dict: Job environment config with base_directory, job_kwargs, log_level, and REDIRECT
+        dict: Job environment config with base directory, job_kwargs, log_level, and REDIRECT
     """
+    from submit_jobs.models import JobEnvironmentDefault  # Avoid import-order issues
+
+    defaults = JobEnvironmentDefault.objects.filter(environment=environment).first()
+    values = (
+        {
+            "base_directory": defaults.base_directory,
+            "n_jobs": defaults.n_jobs,
+            "total_memory": defaults.total_memory,
+            "chunk_duration": defaults.chunk_duration,
+            "progress_bar": defaults.progress_bar,
+            "log_level": defaults.log_level,
+            "redirect_log": defaults.redirect_log,
+            "redirect_out": defaults.redirect_out,
+            "redirect_err": defaults.redirect_err,
+        }
+        if defaults is not None
+        else _HARDCODED_JOB_ENV_DEFAULTS
+    )
+
     return {
-        "base directory": "$LOCAL$/$JOB_ID$",
+        "base directory": values["base_directory"],
         "job_kwargs": {
-            "n_jobs": 40,
-            "total_memory": "128G",
-            "chunk_duration": "60s",
-            "progress_bar": True,
+            "n_jobs": values["n_jobs"],
+            "total_memory": values["total_memory"],
+            "chunk_duration": values["chunk_duration"],
+            "progress_bar": values["progress_bar"],
         },
-        "log_level": "DEBUG",
+        "log_level": values["log_level"],
         "REDIRECT": {
-            "log": "$NAS$/SORTING_LOGS/$JOB_ID$/run.log",
-            "out": "$NAS$/SORTING_LOGS/$JOB_ID$/run.out",
-            "err": "$NAS$/SORTING_LOGS/$JOB_ID$/run.err",
+            "log": values["redirect_log"],
+            "out": values["redirect_out"],
+            "err": values["redirect_err"],
         },
     }
+
+
+class JobEnvironmentDefault(models.Model):
+    """
+    Tunable default job_env values (worker resource limits, log paths) per
+    execution environment. Lets operators adjust these without a code
+    change/deploy — e.g. lowering total_memory or n_jobs after a worker
+    crash caused by an oversized sorting job.
+    """
+
+    environment = models.CharField(
+        max_length=50, unique=True
+    )  # e.g. 'local', 'gpu', 'aws' — matches the environment passed to build_job_env_config
+    base_directory = models.CharField(max_length=255, default="$LOCAL$/$JOB_ID$")
+    n_jobs = models.IntegerField(default=40)
+    total_memory = models.CharField(
+        max_length=20, default="128G"
+    )  # spikeinterface job_kwargs format, e.g. '128G'
+    chunk_duration = models.CharField(max_length=20, default="60s")
+    progress_bar = models.BooleanField(default=True)
+    log_level = models.CharField(max_length=20, default="DEBUG")
+    redirect_log = models.CharField(
+        max_length=255, default="$NAS$/SORTING_LOGS/$JOB_ID$/run.log"
+    )
+    redirect_out = models.CharField(
+        max_length=255, default="$NAS$/SORTING_LOGS/$JOB_ID$/run.out"
+    )
+    redirect_err = models.CharField(
+        max_length=255, default="$NAS$/SORTING_LOGS/$JOB_ID$/run.err"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "jobs_jobenvironmentdefault"
+        ordering = ["environment"]
+
+    def __str__(self):
+        """String representation for a JobEnvironmentDefault object."""
+        return f"JobEnvironmentDefault - {self.environment}"
 
 
 class JobCreationLog(models.Model):
