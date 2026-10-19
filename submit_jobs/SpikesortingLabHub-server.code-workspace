@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../SpikesortingLabHub-CLI"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			".claudeignore": "ignore"
+		}
+	}
+}

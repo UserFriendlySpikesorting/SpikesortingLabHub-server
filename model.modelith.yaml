@@ -1,0 +1,252 @@
+kind: DomainModel
+version: v1
+title: SpikesortingLabHub job submission
+description: >
+  How a researcher's reusable Pipeline (pipeline_factory) becomes a queued Job
+  (submit_jobs, job_queue) that a worker fetches. Derived only from the models
+  and helper functions in the three Django apps.
+
+glossary:
+  Steps: Role of the ordered step rows that make up a Pipeline or a Job.
+  Config: Role of the StepConfig a step uses.
+  Template: Role of the Pipeline a job was submitted from.
+  AuditRecord: Role of the log entry that records one job submission.
+  Researcher: Person who creates a Pipeline and submits a job through the sorting wizard.
+  Worker: Process that calls get_next_job_id to pick up the oldest pending Job.
+  Recording: The root step of every Job. Its StepConfig hash is supplied at submission and is the dependency root for the other steps.
+  Fingerprint: SHA-256 hash of a config block's JSON (sorted keys). It is the StepConfig primary key, so identical configs are stored once.
+
+enums:
+  JobStatus:
+    description: Lifecycle state of a Job in the queue.
+    values:
+      - name: pending
+        definition: Created and waiting; the only state a worker will pick up.
+      - name: fetched
+        definition: Claimed by a worker via get_next_job_id.
+      - name: running
+      - name: completed
+      - name: failed
+      - name: canceled
+  JobStepStatus:
+    description: Lifecycle state of a single JobStep.
+    values:
+      - name: pending
+      - name: running
+      - name: completed
+      - name: failed
+  JobCreationStatus:
+    description: Outcome of a job creation attempt recorded in the audit log.
+    values:
+      - name: pending
+      - name: success
+      - name: failed
+
+entities:
+  StepConfig:
+    definition: >
+      A unique configuration block for one kind of step, identified by the
+      fingerprint of its JSON. It is shared and never copied: both pipeline
+      steps and job steps point at it. Lives in job_queue.
+    attributes:
+      - name: config_block_hash
+        type: string
+        description: Primary key; the `Fingerprint` of config_block.
+      - name: config_block
+        type: json
+        description: The step's configuration. Unique across all StepConfigs.
+      - name: function
+        type: string
+        description: Step function name, e.g. recording, sorting, analyzer.
+    actions:
+      - name: get_or_create_step_configs
+        actor: Researcher
+        preserves: [stepconfig-hash-is-content]
+    invariants:
+      - id: stepconfig-hash-is-content
+        statement: A `StepConfig` key is the fingerprint of its config block, so identical config blocks map to one `StepConfig`.
+
+  Pipeline:
+    definition: >
+      A named, reusable template made of ordered PipelineSteps, created by a
+      Researcher. It is not a run: submitting a job reads it but does not
+      change it. Lives in pipeline_factory.
+    relationships:
+      - entity: PipelineStep
+        cardinality: 1:n
+        ownership: owned
+        role: "`Steps`"
+        note: Ordered steps of the template. Deleting a Pipeline cascades to its steps; order is by pipeline_step_id.
+    attributes:
+      - name: pipeline_id
+        type: integer
+      - name: description
+        type: string
+      - name: created_at
+        type: timestamp
+    actions:
+      - name: create
+        actor: Researcher
+    invariants:
+      - id: pipeline-steps-ordered
+        statement: A `Pipeline` yields its steps in ascending pipeline_step_id order, and a job built from it keeps that order after the `Recording` step.
+
+  PipelineStep:
+    definition: >
+      One step of a Pipeline. It holds no configuration itself; it points at a
+      StepConfig and lists the config hashes of the steps it depends on.
+    relationships:
+      - entity: StepConfig
+        cardinality: n:1
+        ownership: referenced
+        role: "`Config`"
+        note: The configuration this step uses.
+    attributes:
+      - name: pipeline_step_id
+        type: integer
+      - name: depends_on
+        type: json
+        description: List of config_block_hash values of prerequisite steps.
+    invariants:
+      - id: pipeline-step-has-pipeline
+        statement: A `PipelineStep` belongs to exactly one `Pipeline` and is deleted with it.
+
+  Job:
+    definition: >
+      One submitted unit of work in the queue, with its environment
+      configuration and a status. It is a concrete run request, not a template.
+      Lives in job_queue.
+    relationships:
+      - entity: JobStep
+        cardinality: 1:n
+        ownership: owned
+        role: "`Steps`"
+        note: The steps to execute. Deleting a Job cascades to its steps.
+      - entity: JobCreationLog
+        cardinality: 1:0..1
+        ownership: referenced
+        role: "`AuditRecord`"
+        note: Audit record of the submission.
+    attributes:
+      - name: job_id
+        type: string
+        description: UUID primary key.
+      - name: job_env_config
+        type: json
+        description: Environment settings (base directory, job_kwargs, log level, REDIRECT paths).
+      - name: status
+        type: JobStatus
+      - name: created_at
+        type: timestamp
+    actions:
+      - name: create_a_job
+        actor: Researcher
+        preserves: [job-needs-steps, job-step-config-exists, job-step-identifiers-unique]
+      - name: get_next_job_id
+        actor: Worker
+        preserves: [queue-is-fifo]
+    invariants:
+      - id: job-needs-steps
+        statement: A `Job` is created with at least one `JobStep`, and the `Job` and its steps are created together or not at all.
+      - id: queue-is-fifo
+        statement: A `Worker` receives the oldest pending `Job`, and that `Job` becomes fetched so no other `Worker` gets it.
+
+  JobStep:
+    definition: >
+      One step of a Job: a copy of a PipelineStep's function and dependencies,
+      bound to a StepConfig, with its own status. Dependencies are by
+      identifier, which equals the StepConfig hash.
+    relationships:
+      - entity: StepConfig
+        cardinality: n:1
+        ownership: referenced
+        role: "`Config`"
+        note: The configuration this step runs with.
+    attributes:
+      - name: identifier
+        type: string
+        description: Step id within the job; set to the StepConfig hash.
+      - name: function
+        type: string
+      - name: depends_on
+        type: json
+        description: Identifiers of steps this step depends on.
+      - name: status
+        type: JobStepStatus
+    invariants:
+      - id: job-step-config-exists
+        statement: Every `JobStep` refers to a `StepConfig` that already exists when the `Job` is created.
+      - id: job-step-identifiers-unique
+        statement: Within one `Job`, no two `JobStep` share an identifier, so two steps with identical config blocks are rejected.
+
+  JobCreationLog:
+    definition: >
+      Audit record of one job submission through the sorting wizard: which
+      pipeline, the submitted recording config and environment preset, and the
+      outcome. It keeps the pipeline id as a plain number, not a link. Lives in
+      submit_jobs.
+    relationships:
+      - entity: Pipeline
+        cardinality: n:1
+        ownership: referenced
+        role: "`Template`"
+        note: The pipeline selected for the job. Stored as a plain pipeline_id integer, not a database foreign key.
+    attributes:
+      - name: pipeline_id
+        type: integer
+      - name: recording_config
+        type: json
+      - name: job_env_preset
+        type: json
+      - name: status
+        type: JobCreationStatus
+      - name: error_message
+        type: string
+        description: Set only when status is failed.
+      - name: created_at
+        type: timestamp
+    invariants:
+      - id: log-job-null-on-failure
+        statement: A `JobCreationLog` has no `Job` when job creation itself failed.
+
+  JobEnvironmentDefault:
+    definition: >
+      Tunable default job environment values (worker limits, log paths) for a
+      named environment, editable without a deploy. When no row exists for the
+      requested environment, hardcoded defaults are used. Lives in submit_jobs.
+    attributes:
+      - name: environment
+        type: string
+        description: Unique name; default is the standard environment.
+      - name: n_jobs
+        type: integer
+      - name: total_memory
+        type: string
+    actions:
+      - name: build_job_env_config
+        actor: Researcher
+    invariants:
+      - id: environment-name-unique
+        statement: Each `JobEnvironmentDefault` has a distinct environment name.
+
+scenarios:
+  - name: Submit a job from a pipeline
+    description: Shows how a Pipeline template becomes a queued Job.
+    actors: [Researcher, Worker]
+    steps:
+      - The `Researcher` picks a `Pipeline` and supplies a recording config in the wizard.
+      - The `Recording` config is stored as a `StepConfig`; its `Fingerprint` is the recording identifier.
+      - build_job_steps_from_pipeline puts a recording step first, then one entry per `PipelineStep` using that step's `StepConfig` hash and `depends_on`.
+      - The placeholders _RECORDING_ and recording in dependencies are replaced with the recording identifier.
+      - build_job_env_config reads the `JobEnvironmentDefault` for the chosen environment.
+      - create_a_job creates a pending `Job` and one `JobStep` per entry.
+      - A `JobCreationLog` records the outcome.
+      - A `Worker` calls get_next_job_id and receives the oldest pending `Job`, which is marked fetched.
+    invariants_touched: [job-needs-steps, job-step-config-exists, queue-is-fifo]
+  - name: Pipeline with two identical steps
+    actors: [Researcher]
+    steps:
+      - Two `PipelineStep` point at the same `StepConfig`.
+      - create_a_job finds a duplicate identifier and raises an error.
+      - The `JobCreationLog` ends with status failed and an error message.
+    invariants_touched: [job-step-identifiers-unique, log-job-null-on-failure]
