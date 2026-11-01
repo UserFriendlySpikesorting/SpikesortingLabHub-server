@@ -32,7 +32,7 @@ def strip_nas_root(path: str) -> str:
 # ============================================================================
 
 
-def create_sorting_job_logic(validated_data: dict) -> Response:
+def create_sorting_job_logic(validated_data: dict, user=None) -> Response:
     """
     Orchestrates spike-sorting job creation from a validated wizard payload.
     """
@@ -56,7 +56,7 @@ def create_sorting_job_logic(validated_data: dict) -> Response:
     job_env_config = build_job_env_config(environment)
 
     try:
-        job = create_a_job(job_env_config, job_steps)
+        job = create_a_job(job_env_config, job_steps, submitted_by=user)
     except RuntimeError as e:
         return Response(
             {"error": f"Failed to create job: {str(e)}"},
@@ -86,7 +86,7 @@ def create_sorting_job(request):
     if not serializer.is_valid():
         return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        return create_sorting_job_logic(serializer.validated_data)
+        return create_sorting_job_logic(serializer.validated_data, request.user)
     except Exception as e:
         return Response(
             {"error": f"Job creation failed: {str(e)}"},

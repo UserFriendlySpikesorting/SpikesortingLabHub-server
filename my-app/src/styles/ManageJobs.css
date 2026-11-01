@@ -130,7 +130,7 @@
 
 .mj-table-head {
     display: grid;
-    grid-template-columns: 140px 110px 1fr 160px 180px;
+    grid-template-columns: 110px 110px 110px 1fr 150px 130px 170px;
     gap: 16px;
     padding: 11px 20px;
     background: #fafaf8;
@@ -144,7 +144,7 @@
 
 .mj-table-row {
     display: grid;
-    grid-template-columns: 140px 110px 1fr 160px 180px;
+    grid-template-columns: 110px 110px 110px 1fr 150px 130px 170px;
     gap: 16px;
     padding: 14px 20px;
     border-bottom: 1px solid #f0efe8;
@@ -412,10 +412,8 @@
     .mj-table-head,
     .mj-table-row { grid-template-columns: 1fr 90px; }
 
-    .mj-table-head span:nth-child(3),
-    .mj-table-head span:nth-child(4),
-    .mj-table-row span:nth-child(3),
-    .mj-table-row span:nth-child(4) { display: none; }
+    .mj-table-head span:nth-child(n+3):nth-child(-n+6),
+    .mj-table-row span:nth-child(n+3):nth-child(-n+6) { display: none; }
 
     .mj-detail-card { padding: 20px; }
     .mj-detail-top { flex-direction: column; gap: 12px; }
