@@ -288,19 +288,28 @@ def login(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_jobs(request):
-    """GET: List jobs with optional status filter and limit/offset pagination."""
+    """GET: List jobs with optional status/user filter and limit/offset pagination."""
     status_filter = request.query_params.get("status", None)
+    user_filter = request.query_params.get("user", None)
     limit = int(request.query_params.get("limit", 100))
     offset = int(request.query_params.get("offset", 0))
     try:
         jobs_query = Job.objects.all().order_by("-created_at")
         if status_filter:
             jobs_query = jobs_query.filter(status=status_filter)
+        if user_filter:
+            jobs_query = jobs_query.filter(submitted_by__username=user_filter)
         total_count = jobs_query.count()
         jobs = jobs_query[offset: offset + limit]
         serializer = JobListSerializer(jobs, many=True)
+        users = list(
+            Job.objects.filter(submitted_by__isnull=False)
+            .values_list("submitted_by__username", flat=True)
+            .distinct()
+            .order_by("submitted_by__username")
+        )
         return Response(
-            {"total_count": total_count, "count": len(jobs), "limit": limit, "offset": offset, "jobs": serializer.data},
+            {"total_count": total_count, "count": len(jobs), "limit": limit, "offset": offset, "users": users, "jobs": serializer.data},
             status=status.HTTP_200_OK,
         )
     except Exception as e:

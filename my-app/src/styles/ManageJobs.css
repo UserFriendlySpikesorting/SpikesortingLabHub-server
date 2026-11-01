@@ -130,7 +130,7 @@
 
 .mj-table-head {
     display: grid;
-    grid-template-columns: 110px 110px 110px 1fr 150px 130px 170px;
+    grid-template-columns: 110px 110px 140px 1fr 150px 170px;
     gap: 16px;
     padding: 11px 20px;
     background: #fafaf8;
@@ -144,7 +144,7 @@
 
 .mj-table-row {
     display: grid;
-    grid-template-columns: 110px 110px 110px 1fr 150px 130px 170px;
+    grid-template-columns: 110px 110px 140px 1fr 150px 170px;
     gap: 16px;
     padding: 14px 20px;
     border-bottom: 1px solid #f0efe8;
@@ -409,11 +409,12 @@
 @media (max-width: 768px) {
     .mj-container { padding: 24px 16px; }
 
+    /* Narrow screens: keep ID, Status, User and actions; hide Created, Progress */
     .mj-table-head,
-    .mj-table-row { grid-template-columns: 1fr 90px; }
+    .mj-table-row { grid-template-columns: 90px 90px 1fr 90px; }
 
-    .mj-table-head span:nth-child(n+3):nth-child(-n+6),
-    .mj-table-row span:nth-child(n+3):nth-child(-n+6) { display: none; }
+    .mj-table-head span:nth-child(n+4):nth-child(-n+5),
+    .mj-table-row span:nth-child(n+4):nth-child(-n+5) { display: none; }
 
     .mj-detail-card { padding: 20px; }
     .mj-detail-top { flex-direction: column; gap: 12px; }

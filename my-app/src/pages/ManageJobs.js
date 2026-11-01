@@ -10,6 +10,8 @@ export default function ManageJobs({ onBack }) {
     const [error, setError] = useState('');
     const [selectedJob, setSelectedJob] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
+    const [userFilter, setUserFilter] = useState('');
+    const [users, setUsers] = useState([]);
     const [lastRefreshed, setLastRefreshed] = useState(null);
     const isFetchingRef = useRef(false);
 
@@ -48,22 +50,25 @@ export default function ManageJobs({ onBack }) {
 
         return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [statusFilter]);
+    }, [statusFilter, userFilter]);
 
     const fetchJobs = async () => {
         isFetchingRef.current = true;
         setIsLoading(prev => jobs.length === 0 ? true : prev);
         setError('');
         try {
-            const url = statusFilter
-                ? `/job-queue/list/?status=${statusFilter}`
-                : `/job-queue/list/`;
+            const params = new URLSearchParams();
+            if (statusFilter) params.set('status', statusFilter);
+            if (userFilter) params.set('user', userFilter);
+            const qs = params.toString();
+            const url = `/job-queue/list/${qs ? `?${qs}` : ''}`;
             const response = await fetch(url, {
                 headers: { 'Authorization': `Token ${localStorage.getItem('token')}` },
             });
             if (!response.ok) throw new Error('Failed to fetch jobs');
             const data = await response.json();
             setJobs(data.jobs || []);
+            setUsers(data.users || []);
             setLastRefreshed(new Date());
         } catch (err) {
             setError(err.message || 'Failed to load jobs');
@@ -293,6 +298,21 @@ export default function ManageJobs({ onBack }) {
                 ))}
             </div>
 
+            {/* User filter */}
+            {users.length > 0 && (
+                <div className="mj-filters">
+                    {[{ label: 'All users', value: '' }, ...users.map(u => ({ label: u, value: u }))].map(tab => (
+                        <button
+                            key={tab.value || 'all-users'}
+                            className={`mj-filter${userFilter === tab.value ? ' active' : ''}`}
+                            onClick={() => setUserFilter(tab.value)}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {error && <div className="mj-error">{error}</div>}
 
             {jobs.length === 0 ? (
@@ -303,7 +323,6 @@ export default function ManageJobs({ onBack }) {
                         <span>Job ID</span>
                         <span>Status</span>
                         <span>User</span>
-                        <span>Recording</span>
                         <span>Created</span>
                         <span>Progress</span>
                         <span></span>
@@ -321,7 +340,6 @@ export default function ManageJobs({ onBack }) {
                                     </span>
                                 </span>
                                 <span>{job.submitted_by || '—'}</span>
-                                <span title={job.recording || ''} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.recording || '—'}</span>
                                 <span className="mj-date">{formatDate(job.created_at)}</span>
                                 <span className="mj-progress-cell">
                                     <div className="mj-progress-track">
