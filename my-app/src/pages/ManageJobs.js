@@ -176,7 +176,8 @@ export default function ManageJobs({ onBack }) {
                     <div className="mj-detail-top">
                         <div>
                             <div className="mj-detail-id">{selectedJob.job_id}</div>
-                            <div className="mj-detail-date">Created {formatDate(selectedJob.created_at)}</div>
+                            <div className="mj-detail-date">Created {formatDate(selectedJob.created_at)} by {selectedJob.submitted_by || 'unknown'}</div>
+                            {selectedJob.recording && <div className="mj-detail-date">Recording: {selectedJob.recording}</div>}
                         </div>
                         <span className="mj-status-pill" style={{ background: getStatusColor(selectedJob.status) }}>
                             {selectedJob.status.toUpperCase()}
@@ -301,6 +302,8 @@ export default function ManageJobs({ onBack }) {
                     <div className="mj-table-head">
                         <span>Job ID</span>
                         <span>Status</span>
+                        <span>User</span>
+                        <span>Recording</span>
                         <span>Created</span>
                         <span>Progress</span>
                         <span></span>
@@ -317,6 +320,8 @@ export default function ManageJobs({ onBack }) {
                                         {job.status.toUpperCase()}
                                     </span>
                                 </span>
+                                <span>{job.submitted_by || '—'}</span>
+                                <span title={job.recording || ''} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.recording || '—'}</span>
                                 <span className="mj-date">{formatDate(job.created_at)}</span>
                                 <span className="mj-progress-cell">
                                     <div className="mj-progress-track">

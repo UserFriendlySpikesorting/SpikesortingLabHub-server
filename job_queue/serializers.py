@@ -55,10 +55,12 @@ class JobListSerializer(serializers.ModelSerializer):
     step_count = serializers.SerializerMethodField()
     completed_steps = serializers.SerializerMethodField()
     job_env = serializers.SerializerMethodField()
+    submitted_by = serializers.SerializerMethodField()
+    recording = serializers.SerializerMethodField()
 
     class Meta:
         model = Job
-        fields = ["job_id", "status", "created_at", "job_env", "step_count", "completed_steps", "job_steps"]
+        fields = ["job_id", "status", "created_at", "submitted_by", "recording", "job_env", "step_count", "completed_steps", "job_steps"]
         read_only_fields = ["job_id", "status", "created_at"]
 
     def get_step_count(self, obj):
@@ -66,6 +68,17 @@ class JobListSerializer(serializers.ModelSerializer):
 
     def get_completed_steps(self, obj):
         return obj.jobstep_set.filter(status="completed").count()
+
+    def get_submitted_by(self, obj):
+        return obj.submitted_by.username if obj.submitted_by else None
+
+    def get_recording(self, obj):
+        """Recording file name for jobs that have a `recording` step (else None)."""
+        for step in obj.jobstep_set.all():
+            if step.function == "recording":
+                binfile = step.config_block_hash.config_block.get("binfile")
+                return binfile.rstrip("/").split("/")[-1] if binfile else None
+        return None
 
     def get_job_env(self, obj):
         env = obj.job_env_config or {}
@@ -81,5 +94,5 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ["job_id", "status", "created_at", "job_env_config", "steps"]
-        read_only_fields = ["job_id", "status", "created_at"]
+        fields = ["job_id", "status", "created_at", "submitted_by", "job_env_config", "steps"]
+        read_only_fields = ["job_id", "status", "created_at", "submitted_by"]

@@ -1,6 +1,7 @@
 import uuid
 import hashlib
 import json
+from django.conf import settings
 from django.db import models, transaction
 
 # Choices for the 'status' field in Job model
@@ -80,13 +81,14 @@ def get_or_create_step_configs(stepfunction: str, step_config: dict) -> str:
     return fingerprint  # Return the fingerprint (whether new or existing)
 
 
-def create_a_job(job_evn: dict, job_steps: list) -> "Job":
+def create_a_job(job_evn: dict, job_steps: list, submitted_by=None) -> "Job":
     """
     Creates a Job with its associated JobSteps.
     Assumes all StepConfigs already exist in the database.
 
     Args:
         job_evn: Environment configuration dictionary for the job
+        submitted_by: User who submitted the job (None if unknown)
         job_steps: List of step dictionaries, each containing:
                    - identifier: The config_block_hash (FK to StepConfig)
                    - function: The step function name
@@ -143,7 +145,7 @@ def create_a_job(job_evn: dict, job_steps: list) -> "Job":
     # Create the Job and JobSteps atomically
     with transaction.atomic():  # All-or-nothing transaction
         job = Job.objects.create(
-            job_env_config=job_evn, status="pending"
+            job_env_config=job_evn, status="pending", submitted_by=submitted_by
         )  # Create main job
 
         job_steps_objects = []  # Collect all steps for bulk creation
@@ -207,6 +209,14 @@ class Job(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )  # Automatically sets the timestamp when the job is created
+    # Who submitted the job. NULL for jobs created before this field existed.
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="submitted_jobs",
+    )
 
     class Meta:
         db_table = "qmodel_job"
